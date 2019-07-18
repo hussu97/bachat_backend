@@ -86,7 +86,7 @@ for key, offer_type in CATEGORY_TYPES.items():
             tmp.cost = cost_unformatted.text.strip()
         tmp.cost = tmp.cost.replace('Price', '').strip()
         tmp.offer_description = soup.select(REWARD_DETAILS_CSS_SELECTORS['Offer Details'])[
-            0].text.replace('About This Experience', '').strip()
+            0].text.replace('About This Experience', '').replace('View more details','').strip()
         tmp.expiry_date = soup.select(REWARD_DETAILS_CSS_SELECTORS['Expiry Date'])[
             0].text.strip()
         tmp.terms_and_conditions = soup.select(
