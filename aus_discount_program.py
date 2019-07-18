@@ -1,7 +1,6 @@
 from bs4 import BeautifulSoup
 import requests
 import sqlite
-import os
 class Reward:
     pass
 
@@ -117,7 +116,6 @@ for i in results:
                 i.contact
             )
         )
-        print('a')
     elif hasattr(i,'contact'):
         sqlConn.insert_reward(
             INSERT_STATEMENT_2,
@@ -132,7 +130,6 @@ for i in results:
                 i.contact
             )
         )
-        print('b')
     elif hasattr(i, 'offerDescription'):
         sqlConn.insert_reward(
             INSERT_STATEMENT_3,
@@ -147,7 +144,6 @@ for i in results:
                 i.offerDescription
             )
         )
-        print('c')
     else :
         sqlConn.insert_reward(
             INSERT_STATEMENT_4,
@@ -161,4 +157,3 @@ for i in results:
                 i.location
             )
         )
-        print('d')
