@@ -6,7 +6,7 @@ import os
 class SQLConnector:
     def __init__(self):
         self.db_file = os.path.dirname(
-            os.path.abspath(__file__))+'\\db\\rewards.db'
+            os.path.abspath(__file__))+'\\rewards.db'
         try:
             self.conn = sqlite3.connect(self.db_file)
             print(sqlite3.version)
