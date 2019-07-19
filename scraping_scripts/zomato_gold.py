@@ -8,7 +8,7 @@ import scraping_scripts.reward_object as reward
 
 URL_1 = 'https://www.zomato.com/'
 URL_2 = '/restaurants?gold_partner=1'
-COUNTRY_LIST = ['abudhabi', 'fujairah', 'sharjah', 'dubai',  'ajman',
+COUNTRY_LIST = ['sharjah', 'abudhabi', 'fujairah',  'dubai',  'ajman',
                 'umm-al-quwain', 'al-ain',  'ras-al-khaimah']
 
 REWARD_DETAILS_CSS_SELECTORS = {
@@ -28,7 +28,7 @@ REWARD_DETAILS_CSS_SELECTORS = {
 IMAGE_REGEX_EXPRESSION = r'(http.*(\bjpg\b|\bpng\b|\bjpeg\b|\bJPG\b|\bPNG\b|\bJPEG\b))'
 
 REWARD_ORIGIN = 'Zomato Gold'
-REWARD_ORIGIN_LOGO = 'https://b.zmtcdn.com/images/logo/zomato_flat_bg_logo.svg'
+REWARD_ORIGIN_LOGO = 'https://upload.wikimedia.org/wikipedia/commons/e/ef/Zomato-flat-logo.png'
 
 NO_REWARDS_CSS_SELECTOR = '.search-empty-message-container'
 
@@ -45,7 +45,7 @@ class ZomatoGold:
         # bot = webdriver.Firefox(options = options)
         self.bot = webdriver.Firefox()
         self.results = self.run_script()
-        print('{} successfully updated'.format(self.results[0].rewardOrigin))
+        print('{} successfully retrieved'.format(self.results[0].rewardOrigin))
         self.bot.quit()
 
     def run_script(self):
@@ -57,8 +57,9 @@ class ZomatoGold:
                 self.bot.find_element(By.CSS_SELECTOR, NO_REWARDS_CSS_SELECTOR)
                 print('no gold partners for {} in Zomato'.format(i))
             except NoSuchElementException:
-                results.append(self.execute_script(1, i))
-
+                pageResults = self.execute_script(1, i)
+                if pageResults is not None:
+                    results = results + pageResults
                 numberOfPages = int(self.bot.find_element(
                     By.CSS_SELECTOR, PAGE_NUMBER_CSS_SELECTOR).text.split(' ')[3])
 
@@ -67,15 +68,17 @@ class ZomatoGold:
                         By.CSS_SELECTOR, NEXT_PAGE_BUTTON_CSS_SELECTOR)
                     nextPage.click()
                     time.sleep(1)
-                    results.append(self.execute_script(j+2, i))
-            print('{} successfully updated'.format(i))
+                    pageResults = self.execute_script(j+2, i)
+                    if pageResults is not None:
+                        results = results + pageResults
+            print('{} from {} successfully updated'.format(i, results[0].rewardOrigin))
         return results
 
     def execute_script(self,pageNum, city):
         # 'Hon Ai' restaurant has incomplete info, and is causing script to crash
         # Not allowing script to run on that page completely
         if city == 'abudhabi' and pageNum == 15:
-            return
+            return []
         page_css_elements = {}
         # Get scroll height
         document_height = self.bot.execute_script("return document.body.scrollHeight")

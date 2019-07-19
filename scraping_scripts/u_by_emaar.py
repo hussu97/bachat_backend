@@ -34,7 +34,7 @@ IMAGE_REGEX_EXPRESSION = r'(http.*(\bjpg\b|\bpng\b|\bjpeg\b|\bJPG\b|\bPNG\b|\bJP
 class UByEmaar:
     def __init__(self):
         self.results = self.run_script()
-        print('{} successfully updated'.format(self.results[0].rewardOrigin))
+        print('{} successfully retrieved'.format(self.results[0].rewardOrigin))
 
     def run_script(self):
         r = requests.get(URL)
@@ -45,13 +45,11 @@ class UByEmaar:
         for key, offer_type in CATEGORY_TYPES.items():
             data = requests.get('{}/en/offers/{}'.format(URL, key)).text
             soup = BeautifulSoup(data, 'lxml')
-            print('hi')
             offerLinks = [i.get('href') for i in soup.select(OFFER_LINKS_CSS_SELECTOR)]
             for link in offerLinks:
                 tmp = reward.Reward()
                 data = requests.get('{}{}'.format(URL, link)).text
                 soup = BeautifulSoup(data, 'lxml')
-                print('hi again')
                 tmp.offer_type = offer_type
                 offer = soup.select(REWARD_DETAILS_CSS_SELECTORS['Offer'])[0].text
                 offer = offer.replace(' At ', ' at ')

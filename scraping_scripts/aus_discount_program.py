@@ -18,7 +18,7 @@ REWARD_DETAILS_CSS_SELECTORS = {
 class AusDiscountProgram:
     def __init__(self):
         self.results = self.run_script()
-        print('{} successfully updated'.format(self.results[0].rewardOrigin))
+        print('{} successfully retrieved'.format(self.results[0].rewardOrigin))
 
     def run_script(self):
         r = requests.get(url= URL)
@@ -32,7 +32,6 @@ class AusDiscountProgram:
             soup = BeautifulSoup(data, 'lxml')
             discounts = soup.find_all('div', attrs = {'class' : DISCOUNT_LIST_CSS_SELECTOR})
             for discount in discounts:
-                print(discount)
                 tmp = reward.Reward()
                 tmp.backgroundImage = discount.find('div', attrs = {'class': REWARD_DETAILS_CSS_SELECTORS['Background Image']}).find('img')['src']
                 tmp.companyName = discount.find('div', attrs = {'class': REWARD_DETAILS_CSS_SELECTORS['Company Name']}).text.strip()

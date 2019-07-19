@@ -6,23 +6,18 @@ import scraping_scripts.u_by_emaar as Emaar
 # import scraping_scripts.entertainer as Entertainer
 import scraping_scripts.etisalat_smiles as Smiles
 
+rewards_list = [Smiles.EtisalatSmiles, Zomato.ZomatoGold,
+                Aus.AusDiscountProgram, Emaar.UByEmaar]
+
+
 def App():
     sql_conn = SQLConnector()
-    results = Aus.AusDiscountProgram().results
-    sqlDeletions(sql_conn, results[0].rewardOrigin)
-    sqlInsertions(sql_conn, results)
+    for i in rewards_list:
+        results = i().results
+        sqlDeletions(sql_conn, results[0].rewardOrigin)
+        sqlInsertions(sql_conn, results)
+        print('Successfully updated {}'.format(results[0].rewardOrigin))
 
-    results = Zomato.ZomatoGold().results
-    sqlDeletions(sql_conn, results[0].rewardOrigin)
-    sqlInsertions(sql_conn, results)
-
-    results = Emaar.UByEmaar().results
-    sqlDeletions(sql_conn, results[0].rewardOrigin)
-    sqlInsertions(sql_conn, results)
-
-    results = Smiles.EtisalatSmiles().results
-    sqlDeletions(sql_conn, results[0].rewardOrigin)
-    sqlInsertions(sql_conn, results)
 
 def sqlDeletions(sql_conn, rewardOrigin):
     if len(sql_conn.select_by_reward_origin(rewardOrigin)) > 0:
@@ -74,6 +69,7 @@ def sqlInsertions(sql_conn, results):
                 i.workingHours
             )
         )
+
 
 if __name__ == '__main__':
     App()
