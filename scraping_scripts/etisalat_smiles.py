@@ -30,10 +30,10 @@ REWARD_DETAILS_CSS_SELECTORS = {
 
 class EtisalatSmiles:
     def __init__(self):
-        # options = Options()
-        # options.headless = True
-        # bot = webdriver.Firefox(options = options)
-        self.bot = webdriver.Firefox()
+        options = Options()
+        options.headless = True
+        self.bot = webdriver.Firefox(options = options)
+        # self.bot = webdriver.Firefox()
         self.results = self.run_script()
         print('{} successfully retrieved'.format(self.results[0].rewardOrigin))
         self.bot.quit()

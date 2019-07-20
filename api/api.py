@@ -5,7 +5,9 @@ from json import dumps
 import os
 import db_statements
 
-db_connect = create_engine('sqlite:///{}\\..\\db\\rewards.db'.format(os.path.dirname(
+db_connect = create_engine('sqlite:///{}/../db/rewards.db'.format(os.path.dirname(
+    os.path.abspath(__file__))))
+print('sqlite:///{}/../db/rewards.db'.format(os.path.dirname(
     os.path.abspath(__file__))))
 app = Flask(__name__)
 api = Api(app)
@@ -159,6 +161,9 @@ api.add_resource(Categories, '/rewards/categories')
 api.add_resource(Programs, '/rewards/programs')
 api.add_resource(Companies, '/rewards/companies')
 
-if __name__ == '__main__':
-    app.run(host= '0.0.0.0', port='5002')
-    # app.run(host= '127.0.0.1', port='5002')
+def run():
+    app.run(host= '0.0.0.0', port='3000')
+    # app.run(host= '127.0.0.1', port='3000')
+
+if __name__ == "__main__":
+    run()

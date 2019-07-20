@@ -2,3 +2,6 @@ __pycache__/*
 */__pycache__/*
 *.log
 */*.log
+geckodriver
+wsgi.py
+*/db/rewards.db
