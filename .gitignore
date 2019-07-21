@@ -4,6 +4,6 @@ __pycache__/*
 */*.log
 geckodriver
 wsgi.py
-*/db/rewards.db
 config*.py
 */config*.py
+/db/rewards.db
