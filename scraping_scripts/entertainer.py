@@ -40,10 +40,10 @@ class Entertainer:
     def __init__(self, url, slug):
         self.url = url
         self.slug = slug
-        # options = Options()
-        # options.headless = True
-        # self.bot = webdriver.Firefox(options = options)
-        self.bot = webdriver.Firefox()
+        options = Options()
+        options.headless = True
+        self.bot = webdriver.Firefox(options = options)
+        # self.bot = webdriver.Firefox()
         self.results = self.run_script()
         logging.info('{} successfully retrieved'.format(self.results[0].rewardOrigin))
         self.bot.quit()
