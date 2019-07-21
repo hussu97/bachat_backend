@@ -1,9 +1,149 @@
-from bs4 import BeautifulSoup
-import requests
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.firefox.options import Options
+from selenium.common.exceptions import NoSuchElementException, ElementClickInterceptedException, NoAlertPresentException
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+import re
+import scraping_scripts.reward_object as reward
 
-url = 'https://www.theentertainerme.com/search-outlets/index?page=6&SearchOutletsForm%5Bquery%5D=&SearchOutletsForm%5Bproduct_id%5D=4421&SearchOutletsForm%5Bcuisine%5D=&SearchOutletsForm%5Bcountry%5D=&SearchOutletsForm%5Bstarratings%5D=&offers=on'
+REWARD_DETAILS_CSS_SELECTORS = {
+    'Background Image': '.main-gallery .slideset .active img',
+    'Company Name': '.content-desc h1',
+    'Logo': '.hotel-logo img',
+    'Rewards Origin and Details': '.product-sec .product-block',
+    'Reward Origin': '.product-col .description h2',
+    'Offer And Type And Expiry Date': '.offer-tab',
+    'Offer': 'h3',
+    'Expiry Date': '.list-inline li:nth-of-type(2)',
+    'Offer Type': '.icon-holder img',
+    'Details': '.info-list',
+    'Rating': '.review-links img',
+}
+CATEGORY_TYPES = {
+    'Leisure': 'Entertainment',
+    'Travel': 'Travel',
+    'Restaurants and Bars': 'Dining',
+    'Services': 'Services',
+    'Retail': 'Retail',
+    'Body': 'Health'
+}
 
-r = requests.get(url)
-data = r.text
-soup = BeautifulSoup(data, 'lxml')
-print(soup.find_all('div', attrs = {'id' : 'results'}))
+REWARD_ORIGIN_LOGO = 'https://etsitecdn.theentertainerme.com/logo.png'
+
+NEXT_PAGE_BUTTON_CSS_SELECTOR = '#paginate_container .next'
+
+
+class Entertainer:
+    def __init__(self, url):
+        self.url = url
+        # options = Options()
+        # options.headless = True
+        # self.bot = webdriver.Firefox(options = options)
+        self.bot = webdriver.Firefox()
+        self.results = self.run_script()
+        print('{} successfully retrieved'.format(self.results[0].rewardOrigin))
+        self.bot.quit()
+
+    def run_script(self):
+        results = []
+        rewards_links = []
+        self.bot.get(self.url)
+        while True:
+            try:
+                self.bot.switch_to_alert().dismiss()
+                print('random alert')
+                WebDriverWait(self.bot, 20).until(EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, NEXT_PAGE_BUTTON_CSS_SELECTOR)))
+            except NoAlertPresentException as e:
+                pass
+            rewards_links = rewards_links + [i.get_attribute('href') for i in self.bot.find_elements(
+                By.CSS_SELECTOR, '#results .list_view .merchant a')]
+            print(len(rewards_links))
+            try:
+                self.bot.execute_script(
+                    "window.scrollTo(0, document.body.scrollHeight);")
+                next_page_button = self.bot.find_element(
+                    By.CSS_SELECTOR, NEXT_PAGE_BUTTON_CSS_SELECTOR)
+                next_page_button.click()
+            except ElementClickInterceptedException:
+                break
+        for i in rewards_links:
+            self.bot.get(i)
+            try:
+                self.bot.switch_to_alert().dismiss()
+                print('alert gone')
+                WebDriverWait(self.bot, 20).until(EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, REWARD_DETAILS_CSS_SELECTORS['Background Image'])))
+            except NoAlertPresentException as e:
+                pass
+            link = i
+            backgroundImage = self.bot.find_element(
+                By.CSS_SELECTOR, REWARD_DETAILS_CSS_SELECTORS['Background Image']).get_attribute('src')
+            companyName = self.bot.find_element(
+                By.CSS_SELECTOR, REWARD_DETAILS_CSS_SELECTORS['Company Name']).text.strip()
+            logo = self.bot.find_element(
+                By.CSS_SELECTOR, REWARD_DETAILS_CSS_SELECTORS['Logo']).get_attribute('src')
+            details = self.bot.find_element(
+                By.CSS_SELECTOR, REWARD_DETAILS_CSS_SELECTORS['Details']).text.strip()
+            details = details.split('\n')
+            location = ''
+            website = ''
+            address = ''
+            contact = ''
+            for k in range(len(details)-1, 0, -2):
+                if details[k-1] == 'Website':
+                    website = details[k]
+                elif details[k-1] == 'Phone':
+                    contact = details[k]
+                elif details[k-1] == 'Area':
+                    location = details[k]
+                elif details[k-1] == 'Hotel':
+                    address += ' '+details[k]
+                elif details[k-1] == 'Location':
+                    address += details[k]
+                elif details[k-1] == 'Mall':
+                    address += ' ' + details[k]
+                elif details[k-1] == 'Email':
+                    pass
+                else:
+                    print('{} - {}'.format(details[k-1], details[k]))
+            try:
+                ratingImage = self.bot.find_element(
+                    By.CSS_SELECTOR, REWARD_DETAILS_CSS_SELECTORS['Rating']).get_attribute('src')
+                rating = ratingImage.split("/")[-1].split("-")[0]
+            except NoSuchElementException:
+                rating = ''
+            rewardOriginAndDetails = self.bot.find_elements(
+                By.CSS_SELECTOR, REWARD_DETAILS_CSS_SELECTORS['Rewards Origin and Details'])
+            for l in rewardOriginAndDetails:
+                rewardOrigin = l.find_element(
+                    By.CSS_SELECTOR, REWARD_DETAILS_CSS_SELECTORS['Reward Origin']).text.strip()
+                offerTypeExpiry = l.find_elements(
+                    By.CSS_SELECTOR, REWARD_DETAILS_CSS_SELECTORS['Offer And Type And Expiry Date'])
+                for j in offerTypeExpiry:
+                    tmp = reward.Reward()
+                    tmp.offer = j.find_element(
+                        By.CSS_SELECTOR, REWARD_DETAILS_CSS_SELECTORS['Offer']).text.strip()
+                    offerType = j.find_element(
+                        By.CSS_SELECTOR, REWARD_DETAILS_CSS_SELECTORS['Offer Type']).get_attribute('alt')
+                    try:
+                        tmp.offerType = CATEGORY_TYPES[offerType]
+                    except Exception as e:
+                        print(e)
+                        print(offerType)
+                    tmp.expiryDate = j.find_element(
+                        By.CSS_SELECTOR, REWARD_DETAILS_CSS_SELECTORS['Expiry Date']).text.replace("Valid until", "").strip()
+                    tmp.link = link
+                    tmp.backgroundImage = backgroundImage
+                    tmp.companyName = companyName
+                    tmp.logo = logo
+                    tmp.website = website
+                    tmp.contact = contact
+                    tmp.location = location
+                    tmp.address = address
+                    tmp.rating = rating
+                    tmp.rewardOrigin = rewardOrigin
+                    results.append(tmp)
+        return results

@@ -1,6 +1,6 @@
 import sqlite3
 from sqlite3 import Error
-import config_dev as cfg
+import db.config_dev as cfg
 
 
 class SQLConnector:
@@ -28,7 +28,13 @@ class SQLConnector:
             terms_and_conditions text,
             location text,
             expiry_date text,
-            link text
+            link text,
+            contact text,
+            rating text,
+            cuisine text,
+            working_hours text,
+            address text,
+            website text
         )"""
         try:
             cur = self.conn.cursor()

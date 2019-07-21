@@ -7,7 +7,7 @@ import scraping_scripts.reward_object as reward
 URL = 'https://www.ubyemaar.com'
 CATEGORY_TYPES = {
     'dine': 'Dining',
-    'stay': 'Hotels',
+    'stay': 'Travel',
     'play': 'Entertainment',
     'relax': 'Health'
 }
@@ -24,7 +24,7 @@ REWARD_DETAILS_CSS_SELECTORS = {
     'Offer Details': '.about-content',
     'Location': '.search-result-address',
     'Working Hours': '.sec_experience-detail .row .row .col-md-6:first-child .widget-content',
-    'Contact and Link': '.sec_experience-detail .row .row .col-md-6:nth-child(4) .widget-content a.widget-link',
+    'Contact and Website': '.sec_experience-detail .row .row .col-md-6:nth-child(4) .widget-content a.widget-link',
     'Expiry Date': '.thumbBox .exp_inline',
     'Terms and Conditions': '.card-body'
 }
@@ -48,7 +48,8 @@ class UByEmaar:
             offerLinks = [i.get('href') for i in soup.select(OFFER_LINKS_CSS_SELECTOR)]
             for link in offerLinks:
                 tmp = reward.Reward()
-                data = requests.get('{}{}'.format(URL, link)).text
+                tmp.link = '{}{}'.format(URL, link)
+                data = requests.get(tmp.link).text
                 soup = BeautifulSoup(data, 'lxml')
                 tmp.offer_type = offer_type
                 offer = soup.select(REWARD_DETAILS_CSS_SELECTORS['Offer'])[0].text
@@ -92,7 +93,7 @@ class UByEmaar:
                     REWARD_DETAILS_CSS_SELECTORS['Terms and Conditions'])[0].text.strip()
                 contact_and_link = soup.select(
                     REWARD_DETAILS_CSS_SELECTORS['Contact and Link'])
-                tmp.link = contact_and_link[0].get('href')
+                tmp.website = contact_and_link[0].get('href')
                 tmp.contact = contact_and_link[1].text.strip()
                 tmp.rewardOrigin = REWARD_ORIGIN
                 tmp.rewardOriginLogo = REWARD_ORIGIN_LOGO

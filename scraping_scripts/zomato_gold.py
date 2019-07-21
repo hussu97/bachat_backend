@@ -86,7 +86,7 @@ class ZomatoGold:
             # Scroll down to self.bottom
             self.bot.execute_script("window.scrollTo(0, {});".format(i))
             # Wait to load page
-            time.sleep(1)
+            time.sleep(0.5)
         time.sleep(1)
         for name, cssSelector in REWARD_DETAILS_CSS_SELECTORS.items():
             try:

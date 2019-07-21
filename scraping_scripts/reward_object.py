@@ -17,3 +17,5 @@ class Reward:
         self.rating=''
         self.cuisine=''
         self.workingHours=''
+        self.address=''
+        self.website=''
