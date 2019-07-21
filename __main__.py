@@ -28,8 +28,6 @@ rewards_list = [
     Emaar.UByEmaar
 ]
 
-rewards_list = [Entertainer.AbuDhabiBody]
-
 logging.basicConfig(filename=cfg.logger['filename'],
                     filemode='a',
                     format=cfg.logger['format'],
