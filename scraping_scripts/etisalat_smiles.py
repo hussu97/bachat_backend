@@ -4,13 +4,14 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.firefox.options import Options
 from selenium.common.exceptions import ElementClickInterceptedException, ElementNotInteractableException
+import logging
 import time
 import scraping_scripts.reward_object as reward
 
 URL = 'https://smiles.etisalat.ae'
 
 REWARD_ORIGIN = 'Etisalat Smiles'
-
+SLUG = 'etisalat_smiles'
 REWARD_ORIGIN_LOGO = 'https://seeklogo.com/images/E/Etisalat-logo-A58AC10542-seeklogo.com.png'
 
 VIEW_ALL_BUTTON_CSS_SELECTOR = 'dealsbycategory .config-section-title-wrapper a'
@@ -35,7 +36,7 @@ class EtisalatSmiles:
         self.bot = webdriver.Firefox(options = options)
         # self.bot = webdriver.Firefox()
         self.results = self.run_script()
-        print('{} successfully retrieved'.format(self.results[0].rewardOrigin))
+        logging.info('{} successfully retrieved'.format(self.results[0].rewardOrigin))
         self.bot.quit()
 
     def run_script(self):
@@ -48,7 +49,7 @@ class EtisalatSmiles:
             dismiss_popup_button.click()
             time.sleep(1)
         except:
-            print('no popup found')
+            logging.info('no popup found')
         view_all_button = self.bot.find_element(
             By.CSS_SELECTOR, VIEW_ALL_BUTTON_CSS_SELECTOR)
         view_all_button.click()
@@ -70,9 +71,9 @@ class EtisalatSmiles:
                     dismiss_popup_button.click()
                     time.sleep(1)
                 except Exception as e:
-                    print(e)
+                    logging.info(e)
             except ElementNotInteractableException:
-                print('Entire Smiles page loaded')
+                logging.info('Entire Smiles page loaded')
                 break
 
         results = {}
@@ -81,7 +82,7 @@ class EtisalatSmiles:
                 results[name] = self.bot.find_elements(
                     By.CSS_SELECTOR, cssSelector)
             except Exception as e:
-                print(e)
+                logging.info(e)
 
         results_sorted = []
         logo_idx = 0
@@ -101,5 +102,6 @@ class EtisalatSmiles:
             tmp.cost = results['Cost'][idx].text
             tmp.rewardOrigin = REWARD_ORIGIN
             tmp.rewardOriginLogo = REWARD_ORIGIN_LOGO
+            tmp.slug = SLUG
             results_sorted.append(tmp)
         return results_sorted

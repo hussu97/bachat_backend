@@ -1,18 +1,19 @@
 import sqlite3
 from sqlite3 import Error
 import db.config_dev as cfg
+import logging
 
 
 class SQLConnector:
     def __init__(self):
         self.db_file = cfg.sqlite['host']
-        print(self.db_file)
+        logging.info(self.db_file)
         try:
             self.conn = sqlite3.connect(self.db_file)
-            print(sqlite3.version)
+            logging.info(sqlite3.version)
             self.create_rewards_table()
         except Error as e:
-            print(e)
+            logging.info(e)
 
     def create_rewards_table(self):
         CREATE_TABLE_STATEMENT = """CREATE TABLE IF NOT EXISTS rewards(
@@ -34,14 +35,15 @@ class SQLConnector:
             cuisine text,
             working_hours text,
             address text,
-            website text
+            website text,
+            slug text
         )"""
         try:
             cur = self.conn.cursor()
             cur.execute(CREATE_TABLE_STATEMENT)
             cur.close()
         except Error as e:
-            print(e)
+            logging.info(e)
 
     def insert_reward(self, sql, reward):
         cur = self.conn.cursor()
@@ -50,12 +52,12 @@ class SQLConnector:
             cur.close()
             self.conn.commit()
         except Exception as e:
-            print(e)
+            logging.info(e)
 
-    def delete_by_reward_origin(self, reward_origin):
-        sql = 'DELETE FROM rewards where reward_origin = ?'
+    def delete_by_slug(self, slug):
+        sql = 'DELETE FROM rewards where slug = ?'
         cur = self.conn.cursor()
-        cur.execute(sql, (reward_origin,))
+        cur.execute(sql, (slug,))
         cur.close()
         self.conn.commit()
 
@@ -66,10 +68,10 @@ class SQLConnector:
         cur.close()
         return rows
 
-    def select_by_reward_origin(self, reward_origin):
-        sql = 'SELECT * FROM rewards where reward_origin = ?'
+    def select_by_slug(self, slug):
+        sql = 'SELECT * FROM rewards where slug = ?'
         cur = self.conn.cursor()
-        cur.execute(sql, (reward_origin,))
+        cur.execute(sql, (slug,))
         rows = cur.fetchall()
         cur.close()
         return rows

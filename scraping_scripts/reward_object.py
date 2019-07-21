@@ -19,3 +19,4 @@ class Reward:
         self.workingHours=''
         self.address=''
         self.website=''
+        self.slug=''

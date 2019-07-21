@@ -1,10 +1,13 @@
 from bs4 import BeautifulSoup
 import requests
+import logging
 import scraping_scripts.reward_object as reward
 
 URL = 'https://www.aus.edu/discount-program'
 REWARD_ORIGIN = 'AUS Discount Program'
 REWARD_ORIGIN_LOGO = 'https://ih0.redbubble.net/image.402393616.9206/flat,1000x1000,075,f.jpg'
+SLUG = 'aus_discount_program'
+
 DISCOUNT_CATEGORIES_CSS_SELECTOR = '#edit-field-discount-category-tid-wrapper a'
 DISCOUNT_LIST_CSS_SELECTOR = 'views-row'
 REWARD_DETAILS_CSS_SELECTORS = {
@@ -18,7 +21,7 @@ REWARD_DETAILS_CSS_SELECTORS = {
 class AusDiscountProgram:
     def __init__(self):
         self.results = self.run_script()
-        print('{} successfully retrieved'.format(self.results[0].rewardOrigin))
+        logging.info('{} successfully retrieved'.format(self.results[0].rewardOrigin))
 
     def run_script(self):
         r = requests.get(url= URL)
@@ -50,5 +53,6 @@ class AusDiscountProgram:
                 tmp.offerType = category.text.strip()
                 tmp.rewardOrigin = REWARD_ORIGIN
                 tmp.rewardOriginLogo = REWARD_ORIGIN_LOGO
+                tmp.slug = SLUG
                 results.append(tmp)
         return results

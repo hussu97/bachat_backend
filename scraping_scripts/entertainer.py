@@ -4,6 +4,7 @@ from selenium.webdriver.firefox.options import Options
 from selenium.common.exceptions import NoSuchElementException, ElementClickInterceptedException, NoAlertPresentException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+import logging
 import time
 import re
 import scraping_scripts.reward_object as reward
@@ -33,17 +34,18 @@ CATEGORY_TYPES = {
 REWARD_ORIGIN_LOGO = 'https://etsitecdn.theentertainerme.com/logo.png'
 
 NEXT_PAGE_BUTTON_CSS_SELECTOR = '#paginate_container .next'
-
+RESULTS_LIST_CSS_SELECTOR = '#results .list_view .merchant a'
 
 class Entertainer:
-    def __init__(self, url):
+    def __init__(self, url, slug):
         self.url = url
+        self.slug = slug
         # options = Options()
         # options.headless = True
         # self.bot = webdriver.Firefox(options = options)
         self.bot = webdriver.Firefox()
         self.results = self.run_script()
-        print('{} successfully retrieved'.format(self.results[0].rewardOrigin))
+        logging.info('{} successfully retrieved'.format(self.results[0].rewardOrigin))
         self.bot.quit()
 
     def run_script(self):
@@ -53,14 +55,16 @@ class Entertainer:
         while True:
             try:
                 self.bot.switch_to_alert().dismiss()
-                print('random alert')
+                logging.info('alert found while collecting list links')
                 WebDriverWait(self.bot, 20).until(EC.presence_of_element_located(
                     (By.CSS_SELECTOR, NEXT_PAGE_BUTTON_CSS_SELECTOR)))
+                WebDriverWait(self.bot, 20).until(EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, RESULTS_LIST_CSS_SELECTOR)))
             except NoAlertPresentException as e:
                 pass
             rewards_links = rewards_links + [i.get_attribute('href') for i in self.bot.find_elements(
-                By.CSS_SELECTOR, '#results .list_view .merchant a')]
-            print(len(rewards_links))
+                By.CSS_SELECTOR, RESULTS_LIST_CSS_SELECTOR)]
+            logging.info('Reward links for {} retrieved so far - {}'.format(self.slug,len(rewards_links)))
             try:
                 self.bot.execute_script(
                     "window.scrollTo(0, document.body.scrollHeight);")
@@ -68,12 +72,13 @@ class Entertainer:
                     By.CSS_SELECTOR, NEXT_PAGE_BUTTON_CSS_SELECTOR)
                 next_page_button.click()
             except ElementClickInterceptedException:
+                logging.info('Reached end of {}'.format(self.slug))
                 break
         for i in rewards_links:
             self.bot.get(i)
             try:
                 self.bot.switch_to_alert().dismiss()
-                print('alert gone')
+                logging.info('alert found when parsing companies')
                 WebDriverWait(self.bot, 20).until(EC.presence_of_element_located(
                     (By.CSS_SELECTOR, REWARD_DETAILS_CSS_SELECTORS['Background Image'])))
             except NoAlertPresentException as e:
@@ -92,6 +97,7 @@ class Entertainer:
             website = ''
             address = ''
             contact = ''
+            cuisine = ''
             for k in range(len(details)-1, 0, -2):
                 if details[k-1] == 'Website':
                     website = details[k]
@@ -107,8 +113,10 @@ class Entertainer:
                     address += ' ' + details[k]
                 elif details[k-1] == 'Email':
                     pass
+                elif details[k-1] == 'Cuisine':
+                    cuisine = details[k]
                 else:
-                    print('{} - {}'.format(details[k-1], details[k]))
+                    logging.info('{} - {}'.format(details[k-1], details[k]))
             try:
                 ratingImage = self.bot.find_element(
                     By.CSS_SELECTOR, REWARD_DETAILS_CSS_SELECTORS['Rating']).get_attribute('src')
@@ -131,8 +139,7 @@ class Entertainer:
                     try:
                         tmp.offerType = CATEGORY_TYPES[offerType]
                     except Exception as e:
-                        print(e)
-                        print(offerType)
+                        logging.info(offerType)
                     tmp.expiryDate = j.find_element(
                         By.CSS_SELECTOR, REWARD_DETAILS_CSS_SELECTORS['Expiry Date']).text.replace("Valid until", "").strip()
                     tmp.link = link
@@ -143,7 +150,10 @@ class Entertainer:
                     tmp.contact = contact
                     tmp.location = location
                     tmp.address = address
+                    tmp.cuisine = cuisine
                     tmp.rating = rating
                     tmp.rewardOrigin = rewardOrigin
+                    tmp.rewardOriginLogo = REWARD_ORIGIN_LOGO
+                    tmp.slug = self.slug
                     results.append(tmp)
         return results

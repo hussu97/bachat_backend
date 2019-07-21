@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import re
 import scraping_scripts.reward_object as reward
-
+import logging
 
 URL = 'https://www.ubyemaar.com'
 CATEGORY_TYPES = {
@@ -16,6 +16,8 @@ OFFER_LINKS_CSS_SELECTOR = '#offer-container .thumb a'
 
 REWARD_ORIGIN = 'U by Emaar'
 REWARD_ORIGIN_LOGO = 'http://www.dubaichronicle.com/wp-content/uploads/2016/02/U-Emaar-Logo_tcm130-92570-696x348.jpg'
+SLUG = 'u_by_emaar'
+
 REWARD_DETAILS_CSS_SELECTORS = {
     'Background Image': '.slider picture img',
     'Company Name': '.thumb_detail_content h3',
@@ -34,7 +36,7 @@ IMAGE_REGEX_EXPRESSION = r'(http.*(\bjpg\b|\bpng\b|\bjpeg\b|\bJPG\b|\bPNG\b|\bJP
 class UByEmaar:
     def __init__(self):
         self.results = self.run_script()
-        print('{} successfully retrieved'.format(self.results[0].rewardOrigin))
+        logging.info('{} successfully retrieved'.format(self.results[0].rewardOrigin))
 
     def run_script(self):
         r = requests.get(URL)
@@ -92,10 +94,11 @@ class UByEmaar:
                 tmp.terms_and_conditions = soup.select(
                     REWARD_DETAILS_CSS_SELECTORS['Terms and Conditions'])[0].text.strip()
                 contact_and_link = soup.select(
-                    REWARD_DETAILS_CSS_SELECTORS['Contact and Link'])
+                    REWARD_DETAILS_CSS_SELECTORS['Contact and Website'])
                 tmp.website = contact_and_link[0].get('href')
                 tmp.contact = contact_and_link[1].text.strip()
                 tmp.rewardOrigin = REWARD_ORIGIN
                 tmp.rewardOriginLogo = REWARD_ORIGIN_LOGO
+                tmp.slug = SLUG
                 results.append(tmp)
         return results

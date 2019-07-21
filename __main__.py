@@ -1,32 +1,62 @@
 import multiprocessing
 import sys
 import os
+import logging
 
 from db.sqlite import SQLConnector
 import scraping_scripts.aus_discount_program as Aus
-import scraping_scripts.zomato_gold as Zomato
+import scraping_scripts.zomato_helper as Zomato
 import scraping_scripts.u_by_emaar as Emaar
-import scraping_scripts.entertainer_dubai as EntertainerDubai
+import scraping_scripts.entertainer_helper as Entertainer
 import scraping_scripts.etisalat_smiles as Smiles
+import config_dev as cfg
 
-# rewards_list = [Smiles.EtisalatSmiles, Zomato.ZomatoGold,
-#                 Aus.AusDiscountProgram, Emaar.UByEmaar]
-rewards_list = [EntertainerDubai.EntertainerDubai]
+rewards_list = [
+    Entertainer.Dubai,
+    Entertainer.AbuDhabi,
+    Entertainer.AbuDhabiBody,
+    Smiles.EtisalatSmiles,
+    Zomato.Sharjah,
+    Zomato.Dubai,
+    Zomato.Abudhabi,
+    Zomato.UmmAlQuwain,
+    Zomato.Ajman,
+    Zomato.AlAin,
+    Zomato.RasAlKhaimah,
+    Zomato.Fujairah,
+    Aus.AusDiscountProgram,
+    Emaar.UByEmaar
+]
+
+rewards_list = [Entertainer.AbuDhabiBody]
+
+logging.basicConfig(filename=cfg.logger['filename'],
+                    filemode='a',
+                    format=cfg.logger['format'],
+                    datefmt=cfg.logger['datefmt'],
+                    level=cfg.logger['level'])
 
 
 def App():
+    logging.info('Scraping started')
     p = multiprocessing.Pool(_getThreads())
-    print(_getThreads())
+    logging.info('Number of threads in pool - {}'.format(_getThreads()))
     p.map(processing, rewards_list)
     p.close()
     p.join()
+    logging.info('Scraping over')
+
 
 def processing(rewards_class):
-    results = rewards_class().results
-    sql_conn = SQLConnector()
-    sqlDeletions(sql_conn, results[0].rewardOrigin)
-    sqlInsertions(sql_conn, results)
-    print('Successfully updated {}'.format(results[0].rewardOrigin))
+    try:
+        results = rewards_class().results
+        sql_conn = SQLConnector()
+        sqlDeletions(sql_conn, results[0].rewardOrigin)
+        sqlInsertions(sql_conn, results)
+        logging.info('Successfully updated {}'.format(results[0].rewardOrigin))
+    except Exception as e:
+        logging.info(e)
+
 
 def _getThreads():
     """ Returns the number of available threads on a posix/win based system """
@@ -35,9 +65,10 @@ def _getThreads():
     else:
         return (int)(os.popen('grep -c cores /proc/cpuinfo').read())
 
-def sqlDeletions(sql_conn, rewardOrigin):
-    if len(sql_conn.select_by_reward_origin(rewardOrigin)) > 0:
-        sql_conn.delete_by_reward_origin(rewardOrigin)
+
+def sqlDeletions(sql_conn, slug):
+    if len(sql_conn.select_by_slug(slug)) > 0:
+        sql_conn.delete_by_slug(slug)
 
 
 def sqlInsertions(sql_conn, results):
@@ -60,9 +91,10 @@ def sqlInsertions(sql_conn, results):
     cuisine,
     working_hours,
     address,
-    website
+    website,
+    slug
     ) values (
-        ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
+        ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
     )"""
     for i in results:
         sql_conn.insert_reward(
@@ -86,7 +118,8 @@ def sqlInsertions(sql_conn, results):
                 i.cuisine,
                 i.workingHours,
                 i.address,
-                i.website
+                i.website,
+                i.slug
             )
         )
 
