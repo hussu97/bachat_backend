@@ -2,13 +2,11 @@ from flask import Flask, request, jsonify, abort
 from flask_restful import Resource, Api
 from sqlalchemy import create_engine
 from json import dumps
-import os
 import db_statements
+import config_dev as cfg
 
-db_connect = create_engine('sqlite:///{}/../db/rewards.db'.format(os.path.dirname(
-    os.path.abspath(__file__))))
-print('sqlite:///{}/../db/rewards.db'.format(os.path.dirname(
-    os.path.abspath(__file__))))
+
+db_connect = create_engine(cfg.sqlite['host'])
 app = Flask(__name__)
 api = Api(app)
 
@@ -162,7 +160,7 @@ api.add_resource(Programs, '/rewards/programs')
 api.add_resource(Companies, '/rewards/companies')
 
 def run():
-    app.run(host= '0.0.0.0', port='3000')
+    app.run(host= '0.0.0.0', port='3000', debug= True)
     # app.run(host= '127.0.0.1', port='3000')
 
 if __name__ == "__main__":

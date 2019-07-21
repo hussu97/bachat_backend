@@ -1,12 +1,11 @@
 import sqlite3
 from sqlite3 import Error
-import os
+import config_dev as cfg
 
 
 class SQLConnector:
     def __init__(self):
-        self.db_file = os.path.dirname(
-            os.path.abspath(__file__))+'/rewards.db'
+        self.db_file = cfg.sqlite['host']
         print(self.db_file)
         try:
             self.conn = sqlite3.connect(self.db_file)
