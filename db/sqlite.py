@@ -10,6 +10,7 @@ class SQLConnector:
         try:
             self.conn = sqlite3.connect(self.db_file)
             print(sqlite3.version)
+            self.create_rewards_table()
         except Error as e:
             print(e)
 
