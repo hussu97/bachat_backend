@@ -4,8 +4,6 @@ from sqlalchemy import create_engine
 from json import dumps
 import app_api.db_statements as db_statements
 import app_api.config_dev as cfg
-
-
 db_connect = create_engine(cfg.sqlite['host'])
 app = Flask(__name__)
 api = Api(app)
@@ -113,17 +111,24 @@ class Programs(Resource):
             conn.close()
             return jsonify(obj)
         else:
+            program_names = program_name.split(",")
+            print(program_names)
+            param = ''
+            for idx,i in enumerate(program_names):
+                param += "'{}'".format(i)
+                if idx != len(program_names)-1:
+                    param+=','
             rowCount = conn.execute(
-                db_statements.COUNT_REWARDS_BY_PROGRAM.format(program_name)).first()[0]
+                db_statements.COUNT_REWARDS_BY_PROGRAM.format(param)).first()[0]
             print(rowCount)
             return jsonify(get_paginated_list(
                 conn,
                 rowCount,
-                '/rewards/programs?program={}&'.format(program_name),
+                '/rewards/programs?program={}&'.format(param),
                 start=request.args.get('start', 1),
                 limit=request.args.get('limit', 20),
                 sql=db_statements.GET_ALL_REWARDS_BY_PROGRAM.format(
-                    program_name)
+                    param)
             ))
 
 
