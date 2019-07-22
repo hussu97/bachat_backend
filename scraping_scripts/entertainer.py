@@ -36,6 +36,8 @@ REWARD_ORIGIN_LOGO = 'https://etsitecdn.theentertainerme.com/logo.png'
 NEXT_PAGE_BUTTON_CSS_SELECTOR = '#paginate_container .next'
 RESULTS_LIST_CSS_SELECTOR = '#results .list_view .merchant a'
 
+RESET_BROWSER_DATA_PAGES = 30
+
 class Entertainer:
     def __init__(self, url, slug):
         self.url = url
@@ -46,6 +48,7 @@ class Entertainer:
         # self.bot = webdriver.Firefox()
         self.results = self.run_script()
         logging.info('{} successfully retrieved'.format(self.results[0].rewardOrigin))
+        self.bot.close()
         self.bot.quit()
 
     def run_script(self):
@@ -58,8 +61,10 @@ class Entertainer:
                 logging.info('alert found while collecting list links')
                 WebDriverWait(self.bot, 20).until(EC.presence_of_element_located(
                     (By.CSS_SELECTOR, NEXT_PAGE_BUTTON_CSS_SELECTOR)))
-                WebDriverWait(self.bot, 20).until(EC.presence_of_element_located(
+                WebDriverWait(self.bot, 20).until(EC.presence_of_all_elements_located(
                     (By.CSS_SELECTOR, RESULTS_LIST_CSS_SELECTOR)))
+                WebDriverWait(self.bot, 20).until(EC.presence_of_all_elements_located(
+                    (By.CSS_SELECTOR, '#results .list_view .merchant img')))
             except NoAlertPresentException as e:
                 pass
             rewards_links = rewards_links + [i.get_attribute('href') for i in self.bot.find_elements(
@@ -74,8 +79,15 @@ class Entertainer:
             except ElementClickInterceptedException:
                 logging.info('Reached end of {}'.format(self.slug))
                 break
-        for i in rewards_links:
+        self.bot.quit()
+        for idx, i in enumerate(rewards_links):
+            if idx % RESET_BROWSER_DATA_PAGES == 0:
+                self.bot.quit()
+                options = Options()
+                options.headless = True
+                self.bot = webdriver.Firefox(options = options)
             self.bot.get(i)
+            logging.info(i)
             try:
                 self.bot.switch_to_alert().dismiss()
                 logging.info('alert found when parsing companies')
