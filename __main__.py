@@ -28,7 +28,7 @@ rewards_list = [
     Emaar.UByEmaar
 ]
 
-rewards_list = [Smiles.EtisalatSmiles]
+# rewards_list = [Smiles.EtisalatSmiles]
 
 logging.basicConfig(filename=cfg.logger['filename'],
                     filemode='a',
