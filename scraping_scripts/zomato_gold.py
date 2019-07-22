@@ -48,7 +48,7 @@ class ZomatoGold:
         self.bot = webdriver.Firefox(options = options)
         # bot = webdriver.Firefox()
         self.results = self.run_script()
-        logging.info('{} successfully retrieved'.format(self.results[0].rewardOrigin))
+        logging.info('{} successfully retrieved'.format(self.slug))
         self.bot.quit()
 
     def run_script(self):
@@ -57,7 +57,7 @@ class ZomatoGold:
         time.sleep(1)
         try:
             self.bot.find_element(By.CSS_SELECTOR, NO_REWARDS_CSS_SELECTOR)
-            logging.info('no gold partners for {} in Zomato'.format(self.country))
+            logging.info('no gold partners for {} in Zomato'.format(self.slug))
         except NoSuchElementException:
             pageResults = self.execute_script(1, self.country)
             if pageResults is not None:
@@ -73,14 +73,10 @@ class ZomatoGold:
                 pageResults = self.execute_script(j+2, self.country)
                 if pageResults is not None:
                     results = results + pageResults
-            logging.info('{} from {} successfully updated'.format(self.country, results[0].rewardOrigin))
+            logging.info('{} successfully updated'.format(self.slug))
         return results
 
     def execute_script(self,pageNum, city):
-        # 'Hon Ai' restaurant has incomplete info, and is causing script to crash
-        # Not allowing script to run on that page completely
-        if city == 'abudhabi' and pageNum == 15:
-            return []
         page_css_elements = {}
         # Get scroll height
         document_height = self.bot.execute_script("return document.body.scrollHeight")

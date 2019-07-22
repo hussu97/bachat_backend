@@ -28,6 +28,8 @@ rewards_list = [
     Emaar.UByEmaar
 ]
 
+rewards_list = [Emaar.UByEmaar]
+
 logging.basicConfig(filename=cfg.logger['filename'],
                     filemode='a',
                     format=cfg.logger['format'],
@@ -49,9 +51,9 @@ def processing(rewards_class):
     try:
         results = rewards_class().results
         sql_conn = SQLConnector()
-        sqlDeletions(sql_conn, results[0].rewardOrigin)
+        sqlDeletions(sql_conn, results[0].slug)
         sqlInsertions(sql_conn, results)
-        logging.info('Successfully updated {}'.format(results[0].rewardOrigin))
+        logging.info('Successfully updated {}'.format(results[0].slug))
     except Exception as e:
         logging.info(e)
 

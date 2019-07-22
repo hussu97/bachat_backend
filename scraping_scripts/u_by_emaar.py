@@ -24,7 +24,6 @@ REWARD_DETAILS_CSS_SELECTORS = {
     'Offer': '.thumbBox .hdng-sty5',
     'Cost': '.sec_experience-detail .row .row .col-md-6:nth-child(3) .widget-content',
     'Offer Details': '.about-content',
-    'Location': '.search-result-address',
     'Working Hours': '.sec_experience-detail .row .row .col-md-6:first-child .widget-content',
     'Contact and Website': '.sec_experience-detail .row .row .col-md-6:nth-child(4) .widget-content a.widget-link',
     'Expiry Date': '.thumbBox .exp_inline',
@@ -51,9 +50,10 @@ class UByEmaar:
             for link in offerLinks:
                 tmp = reward.Reward()
                 tmp.link = '{}{}'.format(URL, link)
+                logging.info('Checking out link {} of {}'.format(tmp.link,SLUG))
                 data = requests.get(tmp.link).text
                 soup = BeautifulSoup(data, 'lxml')
-                tmp.offer_type = offer_type
+                tmp.offerType = offer_type
                 offer = soup.select(REWARD_DETAILS_CSS_SELECTORS['Offer'])[0].text
                 offer = offer.replace(' At ', ' at ')
                 if ' at ' in offer:
@@ -63,22 +63,22 @@ class UByEmaar:
                 company_name = soup.select(
                     REWARD_DETAILS_CSS_SELECTORS['Company Name'])
                 if not company_name:
-                    tmp.company_name = offer.split(' at ')[1].strip()
+                    tmp.companyName = offer.split(' at ')[1].strip()
                 else:
-                    tmp.company_name = company_name[0].text.strip()
+                    tmp.companyName = company_name[0].text.strip()
                 image_link_partial = soup.select(
                     REWARD_DETAILS_CSS_SELECTORS['Background Image'])[0].get('src')
                 image_link_full = '{}{}'.format(URL, image_link_partial)
-                tmp.background_image = re.search(
+                tmp.backgroundImage = re.search(
                     IMAGE_REGEX_EXPRESSION, image_link_full).group(0)
                 working_hours_unformatted = soup.select(
                     REWARD_DETAILS_CSS_SELECTORS['Working Hours'])[0]
                 if isinstance(working_hours_unformatted, list):
-                    tmp.working_hours = working_hours_unformatted.contents[-1].strip(
+                    tmp.workingHours = working_hours_unformatted.contents[-1].strip(
                     ) if working_hours_unformatted.contents[-1] != '\n' else working_hours_unformatted.contents[-2].strip()
                 else:
-                    tmp.working_hours = working_hours_unformatted.text.strip()
-                tmp.working_hours = tmp.working_hours.replace(
+                    tmp.workingHours = working_hours_unformatted.text.strip()
+                tmp.workingHours = tmp.workingHours.replace(
                     'Opening Hours', '').strip()
                 cost_unformatted = soup.select(REWARD_DETAILS_CSS_SELECTORS['Cost'])[0]
                 if isinstance(cost_unformatted, list):
@@ -87,11 +87,11 @@ class UByEmaar:
                 else:
                     tmp.cost = cost_unformatted.text.strip()
                 tmp.cost = tmp.cost.replace('Price', '').strip()
-                tmp.offer_description = soup.select(REWARD_DETAILS_CSS_SELECTORS['Offer Details'])[
+                tmp.offerDescription = soup.select(REWARD_DETAILS_CSS_SELECTORS['Offer Details'])[
                     0].text.replace('About This Experience', '').replace('View more details','').strip()
-                tmp.expiry_date = soup.select(REWARD_DETAILS_CSS_SELECTORS['Expiry Date'])[
+                tmp.expiryDate = soup.select(REWARD_DETAILS_CSS_SELECTORS['Expiry Date'])[
                     0].text.strip()
-                tmp.terms_and_conditions = soup.select(
+                tmp.termsAndConditions = soup.select(
                     REWARD_DETAILS_CSS_SELECTORS['Terms and Conditions'])[0].text.strip()
                 contact_and_link = soup.select(
                     REWARD_DETAILS_CSS_SELECTORS['Contact and Website'])

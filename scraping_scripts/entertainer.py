@@ -87,7 +87,7 @@ class Entertainer:
                 options.headless = True
                 self.bot = webdriver.Firefox(options = options)
             self.bot.get(i)
-            logging.info(i)
+            logging.info('Checking out link {} of {}'.format(i,self.slug))
             try:
                 self.bot.switch_to_alert().dismiss()
                 logging.info('alert found when parsing companies')
