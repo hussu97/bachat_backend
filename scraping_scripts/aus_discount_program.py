@@ -17,7 +17,18 @@ REWARD_DETAILS_CSS_SELECTORS = {
     'Location': 'views-field-field-discount-location',
     'Contact': 'views-field-field-discount-phone-number',
 }
-
+CATEGORY_TYPES = {
+    'Automotive' : 'Services',
+    'Dining' : 'Dining',
+    'Education' : 'Services',
+    'Hotels/Resorts' : 'Travel',
+    'Leisure/Adventure' : 'Leisure',
+    'Medical/Dental/Nutrition' : 'Health',
+    'Opticians' : 'Health',
+    'Retail' : 'Retail',
+    'Services' : 'Services',
+    'Wellness/Beauty' : 'Health'
+}
 class AusDiscountProgram:
     def __init__(self):
         self.results = self.run_script()
@@ -50,7 +61,7 @@ class AusDiscountProgram:
                     tmp.contact = contact
                 else:
                     tmp.contact = ''
-                tmp.offerType = category.text.strip()
+                tmp.offerType =CATEGORY_TYPES[category.text.strip()]
                 tmp.rewardOrigin = REWARD_ORIGIN
                 tmp.rewardOriginLogo = REWARD_ORIGIN_LOGO
                 tmp.slug = SLUG

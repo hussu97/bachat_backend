@@ -28,6 +28,8 @@ rewards_list = [
     Emaar.UByEmaar
 ]
 
+rewards_list = [Aus.AusDiscountProgram]
+
 logging.basicConfig(filename=cfg.logger['filename'],
                     filemode='a',
                     format=cfg.logger['format'],
