@@ -212,20 +212,35 @@ class Companies(Resource):
 
 class SingleCompany(Resource):
     def get(self, name):
-        conn = db_connect.connect()
+        program_name = request.args.get('program')
         # Replace pen's with pen''s for proper sql search
         name = name.replace("'", "''")
-        rowCount = conn.execute(
-            db_statements.COUNT_REWARDS_BY_COMPANY_NAME.format(name)).first()[0]
-        return jsonify(get_paginated_list(
-            conn,
-            rowCount,
-            '/companies/{}?'.format(name),
-            start=request.args.get('start', 1),
-            limit=request.args.get('limit', 20),
-            sql=db_statements.GET_ALL_REWARDS_BY_COMPANY_NAME.format(
-                name)
-        ))
+        conn = db_connect.connect()
+        if program_name is None or program_name == '':
+            rowCount = conn.execute(
+                db_statements.COUNT_REWARDS_BY_COMPANY_NAME.format(name)).first()[0]
+            return jsonify(get_paginated_list(
+                conn,
+                rowCount,
+                '/companies/{}?'.format(name),
+                start=request.args.get('start', 1),
+                limit=request.args.get('limit', 20),
+                sql=db_statements.GET_ALL_REWARDS_BY_COMPANY_NAME.format(
+                    name)
+            ))
+        else:
+            program_names = get_sql_safe_program_list(program_name.split(','))
+            rowCount = conn.execute(
+                db_statements.COUNT_REWARDS_BY_COMPANY_NAME_FILTERED.format(name, program_names)).first()[0]
+            return jsonify(get_paginated_list(
+                conn,
+                rowCount,
+                '/companies/{}?program={}&'.format(name, program_name),
+                start=request.args.get('start', 1),
+                limit=request.args.get('limit', 20),
+                sql=db_statements.GET_ALL_REWARDS_BY_COMPANY_NAME_FILTERED.format(
+                    name, program_names)
+            ))
 
 
 api.add_resource(Rewards, '/rewards')  # Route_1

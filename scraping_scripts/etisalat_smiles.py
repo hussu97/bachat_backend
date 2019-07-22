@@ -8,10 +8,11 @@ import logging
 import time
 import scraping_scripts.reward_object as reward
 
+# URL = 'https://smiles.etisalat.ae/Smiles-Portal-1.0.0/#/partners'
 URL = 'https://smiles.etisalat.ae'
 
 REWARD_ORIGIN = 'Etisalat Smiles'
-SLUG = 'etisalat_smiles'
+SLUG = 'etisalat_smilesss'
 REWARD_ORIGIN_LOGO = 'https://seeklogo.com/images/E/Etisalat-logo-A58AC10542-seeklogo.com.png'
 
 VIEW_ALL_BUTTON_CSS_SELECTOR = 'dealsbycategory .config-section-title-wrapper a'
@@ -32,11 +33,16 @@ REWARD_DETAILS_CSS_SELECTORS = {
 class EtisalatSmiles:
     def __init__(self):
         options = Options()
-        options.headless = True
-        self.bot = webdriver.Firefox(options = options)
+        # options.headless = True
+        self.bot = webdriver.Firefox(options=options)
         # self.bot = webdriver.Firefox()
-        self.results = self.run_script()
-        logging.info('{} successfully retrieved'.format(self.results[0].rewardOrigin))
+        # self.results = self.run_script()
+        self.results = []
+        self.bot.get(URL)
+        time.sleep(1)
+        # links =[i.get_attribute('href') for i in self.bot.find_elements(By.CSS_SELECTOR,'.menu-content .smiles-tab-content .smiles-tab-content-item a')]
+        logging.info('{} successfully retrieved'.format(
+            self.results[0].rewardOrigin))
         self.bot.quit()
 
     def run_script(self):
