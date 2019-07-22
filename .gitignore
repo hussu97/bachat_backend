@@ -3,7 +3,7 @@ __pycache__/*
 *.log
 */*.log
 geckodriver
-wsgi.py
+*/wsgi.py
 config*.py
 */config*.py
 /db/rewards.db
