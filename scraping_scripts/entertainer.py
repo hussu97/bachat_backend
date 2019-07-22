@@ -36,7 +36,8 @@ REWARD_ORIGIN_LOGO = 'https://etsitecdn.theentertainerme.com/logo.png'
 NEXT_PAGE_BUTTON_CSS_SELECTOR = '#paginate_container .next'
 RESULTS_LIST_CSS_SELECTOR = '#results .list_view .merchant a'
 
-RESET_BROWSER_DATA_PAGES = 30
+RESET_BROWSER_DATA_PAGES = 5
+
 
 class Entertainer:
     def __init__(self, url, slug):
@@ -44,10 +45,10 @@ class Entertainer:
         self.slug = slug
         options = Options()
         options.headless = True
-        self.bot = webdriver.Firefox(options = options)
-        # self.bot = webdriver.Firefox()
+        self.bot = webdriver.Firefox(options=options)
         self.results = self.run_script()
-        logging.info('{} successfully retrieved'.format(self.results[0].rewardOrigin))
+        logging.info('{} successfully retrieved'.format(
+            self.results[0].rewardOrigin))
         self.bot.close()
         self.bot.quit()
 
@@ -59,17 +60,15 @@ class Entertainer:
             try:
                 self.bot.switch_to_alert().dismiss()
                 logging.info('alert found while collecting list links')
-                WebDriverWait(self.bot, 20).until(EC.presence_of_element_located(
-                    (By.CSS_SELECTOR, NEXT_PAGE_BUTTON_CSS_SELECTOR)))
-                WebDriverWait(self.bot, 20).until(EC.presence_of_all_elements_located(
-                    (By.CSS_SELECTOR, RESULTS_LIST_CSS_SELECTOR)))
-                WebDriverWait(self.bot, 20).until(EC.presence_of_all_elements_located(
-                    (By.CSS_SELECTOR, '#results .list_view .merchant img')))
+                time.sleep(5)
+                self.bot.switch_to_alert().dismiss()
+                logging.info('removed alert again')
             except NoAlertPresentException as e:
                 pass
             rewards_links = rewards_links + [i.get_attribute('href') for i in self.bot.find_elements(
                 By.CSS_SELECTOR, RESULTS_LIST_CSS_SELECTOR)]
-            logging.info('Reward links for {} retrieved so far - {}'.format(self.slug,len(rewards_links)))
+            logging.info(
+                'Reward links for {} retrieved so far - {}'.format(self.slug, len(rewards_links)))
             try:
                 self.bot.execute_script(
                     "window.scrollTo(0, document.body.scrollHeight);")
@@ -79,15 +78,14 @@ class Entertainer:
             except ElementClickInterceptedException:
                 logging.info('Reached end of {}'.format(self.slug))
                 break
-        self.bot.quit()
         for idx, i in enumerate(rewards_links):
             if idx % RESET_BROWSER_DATA_PAGES == 0:
                 self.bot.quit()
                 options = Options()
                 options.headless = True
-                self.bot = webdriver.Firefox(options = options)
+                self.bot = webdriver.Firefox(options=options)
             self.bot.get(i)
-            logging.info('Checking out link {} of {}'.format(i,self.slug))
+            logging.info('Checking out link {} of {}'.format(i, self.slug))
             try:
                 self.bot.switch_to_alert().dismiss()
                 logging.info('alert found when parsing companies')

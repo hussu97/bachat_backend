@@ -28,8 +28,6 @@ rewards_list = [
     Emaar.UByEmaar
 ]
 
-rewards_list = [Emaar.UByEmaar]
-
 logging.basicConfig(filename=cfg.logger['filename'],
                     filemode='a',
                     format=cfg.logger['format'],
