@@ -1,0 +1,12 @@
+GET_ALL_REWARDS = "SELECT * FROM rewards;"
+GET_ALL_REWARDS_BY_PROGRAM = "SELECT * FROM rewards where reward_origin='{}'"
+GET_ALL_REWARDS_BY_COMPANY_NAME = "SELECT * FROM rewards where company_name LIKE '{}%' ORDER BY LOWER(company_name)"
+GET_ALL_REWARDS_BY_CATEGORY = "SELECT * FROM rewards where offer_type LIKE '%{}%' ORDER BY LOWER(company_name)"
+COUNT_REWARDS = "SELECT COUNT(*) FROM rewards;"
+COUNT_REWARDS_BY_PROGRAM = "SELECT COUNT(*) FROM rewards where reward_origin='{}'"
+COUNT_REWARDS_BY_COMPANY_NAME = "SELECT COUNT(*) FROM rewards where company_name LIKE '{}%'"
+COUNT_REWARDS_BY_CATEGORY = "SELECT COUNT(*) FROM rewards where offer_type LIKE '%{}%'"
+GET_ALL_PROGRAMS = "SELECT COUNT(reward_origin) AS count, reward_origin,reward_origin_logo FROM rewards GROUP BY reward_origin;"
+GET_ALL_COMPANIES = "SELECT DISTINCT company_name from rewards;"
+GET_ALL_CATEGORIES = "SELECT COUNT(offer_type) AS count, offer_type FROM rewards GROUP BY offer_type;"
+
