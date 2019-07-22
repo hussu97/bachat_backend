@@ -1,7 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
-from selenium.common.exceptions import NoSuchElementException, ElementClickInterceptedException, NoAlertPresentException
+from selenium.common.exceptions import NoSuchElementException, ElementClickInterceptedException, NoAlertPresentException, TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import logging
@@ -84,7 +84,11 @@ class Entertainer:
                 options = Options()
                 options.headless = True
                 self.bot = webdriver.Firefox(options=options)
-            self.bot.get(i)
+            try:
+                self.bot.get(i)
+            except TimeoutException as e:
+                logging.info('{} did not load in {}'.format(i,self.slug))
+                continue  
             logging.info('Checking out link {} of {}'.format(i, self.slug))
             try:
                 self.bot.switch_to_alert().dismiss()

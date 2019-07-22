@@ -6,7 +6,7 @@ import app_api.db_statements as db_statements
 import app_api.config_dev as cfg
 db_connect = create_engine(cfg.sqlite['host'])
 app = Flask(__name__)
-api = Api(app)
+api = Api(app, prefix='/api/v1')
 
 
 def get_paginated_list(conn, numResults, url, start, limit, sql):
@@ -44,9 +44,10 @@ def get_paginated_list(conn, numResults, url, start, limit, sql):
 
 def fix_categories_list(json):
     offer_list = [i['offer_type'] for i in json]
-    unique_categories = set([item for sublist in list(map(lambda x: x.split(","), offer_list)) for item in sublist])
+    unique_categories = set([item for sublist in list(
+        map(lambda x: x.split(","), offer_list)) for item in sublist])
     offer_list_modified = {
-        'data' : []
+        'data': []
     }
     for c in unique_categories:
         count = 0
@@ -54,48 +55,100 @@ def fix_categories_list(json):
             if c in d['offer_type']:
                 count += d['count']
         offer_list_modified['data'].append({
-            'offer_type' : c,
-            'count' : count
+            'offer_type': c,
+            'count': count
         })
     return offer_list_modified
 
 
+def get_sql_safe_program_list(programs):
+    param = ''
+    for idx, i in enumerate(programs):
+        param += "'{}'".format(i)
+        if idx != len(programs)-1:
+            param += ','
+    return param
+
+
 class Rewards(Resource):
     def get(self):
+        program_name = request.args.get('program')
         conn = db_connect.connect()
-        rowCount = conn.execute(db_statements.COUNT_REWARDS).first()[0]
-        return jsonify(get_paginated_list(
-            conn,
-            rowCount,
-            '/rewards?',
-            start=request.args.get('start', 1),
-            limit=request.args.get('limit', 20),
-            sql=db_statements.GET_ALL_REWARDS
-        ))
+        if program_name is None or program_name == '':
+
+            rowCount = conn.execute(db_statements.COUNT_REWARDS).first()[0]
+            return jsonify(get_paginated_list(
+                conn,
+                rowCount,
+                '/rewards?',
+                start=request.args.get('start', 1),
+                limit=request.args.get('limit', 20),
+                sql=db_statements.GET_ALL_REWARDS
+            ))
+        else:
+            program_names = get_sql_safe_program_list(program_name.split(','))
+            rowCount = conn.execute(
+                db_statements.COUNT_REWARDS_FILTERED.format(program_names)).first()[0]
+            return jsonify(get_paginated_list(
+                conn,
+                rowCount,
+                '/rewards?program={}'.format(program_name),
+                start=request.args.get('start', 1),
+                limit=request.args.get('limit', 20),
+                sql=db_statements.GET_ALL_REWARDS_FILTERED.format(
+                    program_names)
+            ))
 
 
 class Categories(Resource):
     def get(self):
-        category_name = request.args.get('category')
+        program_name = request.args.get('program')
         conn = db_connect.connect()
-        if category_name is None:
+        if program_name is None or program_name == '':
             query = conn.execute(db_statements.GET_ALL_CATEGORIES)
             obj = fix_categories_list([dict(zip(tuple(query.keys()), i))
-                                 for i in query.cursor])
+                                       for i in query.cursor])
             conn.close()
             return obj
         else:
+            program_names = get_sql_safe_program_list(program_name.split(','))
+            query = conn.execute(
+                db_statements.GET_ALL_CATEGORIES_FILTERED.format(program_names))
+            obj = {}
+            obj['data'] = [dict(zip(tuple(query.keys()), i))
+                           for i in query.cursor]
+            conn.close()
+            return obj
+
+
+class SingleCategory(Resource):
+    def get(self, name):
+        program_name = request.args.get('program')
+        conn = db_connect.connect()
+        if program_name is None or program_name == '':
             rowCount = conn.execute(
-                db_statements.COUNT_REWARDS_BY_CATEGORY.format(category_name)).first()[0]
-            print(rowCount)
+                db_statements.COUNT_REWARDS_BY_CATEGORY.format(name)).first()[0]
             return jsonify(get_paginated_list(
                 conn,
                 rowCount,
-                '/rewards/categories?category={}&'.format(category_name),
+                '/categories/{}?'.format(name),
                 start=request.args.get('start', 1),
                 limit=request.args.get('limit', 20),
                 sql=db_statements.GET_ALL_REWARDS_BY_CATEGORY.format(
-                    category_name)
+                    name)
+            ))
+        else:
+            program_names = get_sql_safe_program_list(program_name.split(','))
+            rowCount = conn.execute(
+                db_statements.COUNT_REWARDS_BY_CATEGORY_FILTERED.format(name, program_names)).first()[0]
+            return jsonify(get_paginated_list(
+                conn,
+                rowCount,
+                '/categories/{}?program={}&'.format(name, program_name),
+                start=request.args.get('start', 1),
+                limit=request.args.get('limit', 20),
+                sql=db_statements.GET_ALL_REWARDS_BY_CATEGORY_FILTERED.format(
+                    name, program_names)
             ))
 
 
@@ -103,66 +156,85 @@ class Programs(Resource):
     def get(self):
         program_name = request.args.get('program')
         conn = db_connect.connect()
-        if program_name is None:
+        if program_name is None or program_name == '':
             query = conn.execute(db_statements.GET_ALL_PROGRAMS)
             obj = {}
             obj['data'] = [dict(zip(tuple(query.keys()), i))
                            for i in query.cursor]
             conn.close()
-            return jsonify(obj)
+            return obj
         else:
-            program_names = program_name.split(",")
-            print(program_names)
-            param = ''
-            for idx,i in enumerate(program_names):
-                param += "'{}'".format(i)
-                if idx != len(program_names)-1:
-                    param+=','
-            rowCount = conn.execute(
-                db_statements.COUNT_REWARDS_BY_PROGRAM.format(param)).first()[0]
-            print(rowCount)
-            return jsonify(get_paginated_list(
-                conn,
-                rowCount,
-                '/rewards/programs?program={}&'.format(param),
-                start=request.args.get('start', 1),
-                limit=request.args.get('limit', 20),
-                sql=db_statements.GET_ALL_REWARDS_BY_PROGRAM.format(
-                    param)
-            ))
+            program_names = get_sql_safe_program_list(program_name.split(','))
+            query = conn.execute(
+                db_statements.GET_ALL_PROGRAMS_FILTERED.format(program_names))
+            obj = {}
+            obj['data'] = [dict(zip(tuple(query.keys()), i))
+                           for i in query.cursor]
+            conn.close()
+            return obj
+
+
+class SingleProgram(Resource):
+    def get(self, name):
+        conn = db_connect.connect()
+        rowCount = conn.execute(
+            db_statements.COUNT_REWARDS_BY_PROGRAM.format(name)).first()[0]
+        return jsonify(get_paginated_list(
+            conn,
+            rowCount,
+            '/programs/{}?'.format(name),
+            start=request.args.get('start', 1),
+            limit=request.args.get('limit', 20),
+            sql=db_statements.GET_ALL_REWARDS_BY_PROGRAM.format(
+                name)
+        ))
 
 
 class Companies(Resource):
     def get(self):
-        company_name = request.args.get('company')
+        program_name = request.args.get('program')
         conn = db_connect.connect()
-        if company_name is None:
+        if program_name is None or program_name == '':
             query = conn.execute(db_statements.GET_ALL_COMPANIES)
             obj = {}
             obj['data'] = [i[0] for i in query.cursor]
             conn.close()
             return obj
         else:
-            # Replace pen's with pen''s for proper sql search
-            company_name = company_name.replace("'", "''")
-            rowCount = conn.execute(
-                db_statements.COUNT_REWARDS_BY_COMPANY_NAME.format(company_name)).first()[0]
-            print(rowCount)
-            return jsonify(get_paginated_list(
-                conn,
-                rowCount,
-                '/rewards/companies?company={}&'.format(company_name),
-                start=request.args.get('start', 1),
-                limit=request.args.get('limit', 20),
-                sql=db_statements.GET_ALL_REWARDS_BY_COMPANY_NAME.format(
-                    company_name)
-            ))
+            program_names = get_sql_safe_program_list(program_name.split(','))
+            query = conn.execute(
+                db_statements.GET_ALL_COMPANIES_FILTERED.format(program_names))
+            obj = {}
+            obj['data'] = [i[0] for i in query.cursor]
+            conn.close()
+            return obj
+
+
+class SingleCompany(Resource):
+    def get(self, name):
+        conn = db_connect.connect()
+        # Replace pen's with pen''s for proper sql search
+        name = name.replace("'", "''")
+        rowCount = conn.execute(
+            db_statements.COUNT_REWARDS_BY_COMPANY_NAME.format(name)).first()[0]
+        return jsonify(get_paginated_list(
+            conn,
+            rowCount,
+            '/companies/{}?'.format(name),
+            start=request.args.get('start', 1),
+            limit=request.args.get('limit', 20),
+            sql=db_statements.GET_ALL_REWARDS_BY_COMPANY_NAME.format(
+                name)
+        ))
 
 
 api.add_resource(Rewards, '/rewards')  # Route_1
-api.add_resource(Categories, '/rewards/categories')
-api.add_resource(Programs, '/rewards/programs')
-api.add_resource(Companies, '/rewards/companies')
+api.add_resource(Categories, '/categories')
+api.add_resource(SingleCategory, '/categories/<name>')
+api.add_resource(Programs, '/programs')
+api.add_resource(SingleProgram, '/programs/<name>')
+api.add_resource(Companies, '/companies')
+api.add_resource(SingleCompany, '/companies/<name>')
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port='3000', debug=True)
