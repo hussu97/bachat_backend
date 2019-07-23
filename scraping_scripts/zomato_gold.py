@@ -5,7 +5,9 @@ from selenium.common.exceptions import NoSuchElementException
 import time
 import re
 import scraping_scripts.reward_object as reward
+import scraping_scripts.gmaps_location_helper as gmaps
 import logging
+import hashlib
 
 URL_1 = 'https://www.zomato.com/'
 URL_2 = '/restaurants?gold_partner=1'
@@ -19,7 +21,7 @@ REWARD_DETAILS_CSS_SELECTORS = {
     'Offer Type': '.res-snippet-small-establishment',
     'Cost': '.res-cost .col-s-11',
     'Cuisine': '.search-page-text div:first-child .col-s-11',
-    'Location': '.search-result-address',
+    'Location': '.search_result_subzone',
     'Working Hours': '.res-timing',
     'Contact': '.res-snippet-ph-info',
     'Link': '.result-title',
@@ -39,14 +41,14 @@ NEXT_PAGE_BUTTON_CSS_SELECTOR = '.pagination-control .next'
 FOOD_OFFER_IMG = 'https://www.zomato.com//images/red/gold_blue_tag_1_en.png'
 DRINKS_OFFER_IMG = 'https://www.zomato.com//images/red/gold_blue_tag_2_en.png'
 
+
 class ZomatoGold:
     def __init__(self, country):
         self.country = country
         self.slug = 'zomato_gold_{}'.format(self.country)
         options = Options()
         options.headless = True
-        self.bot = webdriver.Firefox(options = options)
-        # bot = webdriver.Firefox()
+        self.bot = webdriver.Firefox(options=options)
         self.results = self.run_script()
         logging.info('{} successfully retrieved'.format(self.slug))
         self.bot.quit()
@@ -76,10 +78,11 @@ class ZomatoGold:
             logging.info('{} successfully updated'.format(self.slug))
         return results
 
-    def execute_script(self,pageNum, city):
+    def execute_script(self, pageNum, city):
         page_css_elements = {}
         # Get scroll height
-        document_height = self.bot.execute_script("return document.body.scrollHeight")
+        document_height = self.bot.execute_script(
+            "return document.body.scrollHeight")
         for i in range(0, document_height, 1080):
             # Scroll down to self.bottom
             self.bot.execute_script("window.scrollTo(0, {});".format(i))
@@ -102,7 +105,8 @@ class ZomatoGold:
             except Exception as e:
                 logging.info('found {} error in page {} item {} for {} place'.format(
                     e, pageNum, idx+1, city))
-            tmp.companyName = page_css_elements['Company Name'][idx].text.strip()
+            tmp.companyName = page_css_elements['Company Name'][idx].text.strip(
+            )
             tmp.offer = '1+1 on Food' if page_css_elements['Offer'][idx].get_attribute(
                 'src') == FOOD_OFFER_IMG else '2+2 on Drinks'
             if tmp.companyName == 'Castle Restaurant':
@@ -114,7 +118,8 @@ class ZomatoGold:
                 offerTypeIdx += 1
             tmp.cost = page_css_elements['Cost'][idx].text.strip() + ' for Two'
             tmp.cuisine = page_css_elements['Cuisine'][idx].text.strip()
-            tmp.address = page_css_elements['Location'][idx].text.strip()
+            address = tmp.companyName + ' ' + \
+                page_css_elements['Location'][idx].text.strip()
             tmp.workingHours = page_css_elements['Working Hours'][idx].get_attribute(
                 'title').strip()
             tmp.contact = page_css_elements['Contact'][idx].get_attribute(
@@ -123,9 +128,10 @@ class ZomatoGold:
             tmp.rating = page_css_elements['Rating'][idx].text.strip()
             tmp.rewardOrigin = REWARD_ORIGIN
             tmp.rewardOriginLogo = REWARD_ORIGIN_LOGO
+            hashid = '{}{}{}'.format(
+                self.slug, address, tmp.companyName).encode('utf-8')
+            tmp.id = str(int(hashlib.md5(hashid).hexdigest(), 16))
+            gmaps.getLocationId(tmp.id, address)
             tmp.slug = self.slug
-            tmp.location = self.country.capitalize()
             results.append(tmp)
         return results
-
-

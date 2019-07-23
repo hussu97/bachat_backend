@@ -28,7 +28,6 @@ rewards_list = [
     Emaar.UByEmaar
 ]
 
-rewards_list = [Smiles.EtisalatSmiles]
 
 logging.basicConfig(filename=cfg.logger['filename'],
                     filemode='a',
@@ -39,7 +38,7 @@ logging.basicConfig(filename=cfg.logger['filename'],
 
 def App():
     logging.info('Scraping started')
-    p = multiprocessing.Pool(_getThreads())
+    p = multiprocessing.Pool(4)
     logging.info('Number of threads in pool - {}'.format(_getThreads()))
     p.map(processing, rewards_list)
     p.close()
@@ -51,6 +50,7 @@ def processing(rewards_class):
     try:
         results = rewards_class().results
         sql_conn = SQLConnector()
+        sql_conn.create_tables()
         sqlDeletions(sql_conn, results[0].slug)
         sqlInsertions(sql_conn, results)
         logging.info('Successfully updated {}'.format(results[0].slug))
@@ -83,18 +83,17 @@ def sqlInsertions(sql_conn, results):
     company_name,
     cost,
     terms_and_conditions,
-    location,
     expiry_date,
     link,
     contact,
     rating,
     cuisine,
     working_hours,
-    address,
     website,
-    slug
+    slug,
+    id
     ) values (
-        ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
+        ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
     )"""
     for i in results:
         sql_conn.insert_reward(
@@ -110,16 +109,15 @@ def sqlInsertions(sql_conn, results):
                 i.companyName,
                 i.cost,
                 i.termsAndConditions,
-                i.location,
                 i.expiryDate,
                 i.link,
                 i.contact,
                 i.rating,
                 i.cuisine,
                 i.workingHours,
-                i.address,
                 i.website,
-                i.slug
+                i.slug,
+                i.id
             )
         )
 

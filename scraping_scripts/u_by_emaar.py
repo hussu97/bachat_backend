@@ -1,8 +1,10 @@
 import requests
 from bs4 import BeautifulSoup
 import re
-import scraping_scripts.reward_object as reward
+from scraping_scripts.reward_object import Reward
 import logging
+import hashlib
+import scraping_scripts.gmaps_location_helper as gmaps
 
 URL = 'https://www.ubyemaar.com'
 CATEGORY_TYPES = {
@@ -27,7 +29,8 @@ REWARD_DETAILS_CSS_SELECTORS = {
     'Working Hours': '.sec_experience-detail .row .row .col-md-6:first-child .widget-content',
     'Contact and Website': '.sec_experience-detail .row .row .col-md-6:nth-child(4) .widget-content a.widget-link',
     'Expiry Date': '.thumbBox .exp_inline',
-    'Terms and Conditions': '.card-body'
+    'Terms and Conditions': '.card-body',
+    'Address' : '.experienceList .thumb_detail_content a:nth-of-type(1) p:nth-of-type(2)'
 }
 
 IMAGE_REGEX_EXPRESSION = r'(http.*(\bjpg\b|\bpng\b|\bjpeg\b|\bJPG\b|\bPNG\b|\bJPEG\b))'
@@ -48,7 +51,7 @@ class UByEmaar:
             soup = BeautifulSoup(data, 'lxml')
             offerLinks = [i.get('href') for i in soup.select(OFFER_LINKS_CSS_SELECTOR)]
             for link in offerLinks:
-                tmp = reward.Reward()
+                tmp = Reward()
                 tmp.link = '{}{}'.format(URL, link)
                 logging.info('Checking out link {} of {}'.format(tmp.link,SLUG))
                 data = requests.get(tmp.link).text
@@ -99,6 +102,17 @@ class UByEmaar:
                 tmp.contact = contact_and_link[1].text.strip()
                 tmp.rewardOrigin = REWARD_ORIGIN
                 tmp.rewardOriginLogo = REWARD_ORIGIN_LOGO
+                address = [i.text.strip() for i in soup.select(REWARD_DETAILS_CSS_SELECTORS['Address'])]
+                hashid = '{}{}{}'.format(
+                SLUG, address, tmp.companyName).encode('utf-8')
+                tmp.id = str(int(hashlib.md5(hashid).hexdigest(), 16))
+                for add in address:
+                    if '|' in add:
+                        addresses = add.split('|')
+                        for adds in addresses:
+                            gmaps.getLocationId(tmp.id, adds)
+                    else:
+                        gmaps.getLocationId(tmp.id, add)
                 tmp.slug = SLUG
                 results.append(tmp)
         return results

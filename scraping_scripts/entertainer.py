@@ -7,7 +7,9 @@ from selenium.webdriver.support import expected_conditions as EC
 import logging
 import time
 import re
-import scraping_scripts.reward_object as reward
+import hashlib
+from scraping_scripts.reward_object import Reward
+import scraping_scripts.gmaps_location_helper as gmaps
 
 REWARD_DETAILS_CSS_SELECTORS = {
     'Background Image': '.main-gallery .slideset .active img',
@@ -36,7 +38,7 @@ REWARD_ORIGIN_LOGO = 'https://etsitecdn.theentertainerme.com/logo.png'
 NEXT_PAGE_BUTTON_CSS_SELECTOR = '#paginate_container .next'
 RESULTS_LIST_CSS_SELECTOR = '#results .list_view .merchant a'
 
-RESET_BROWSER_DATA_PAGES = 5
+RESET_BROWSER_DATA_PAGES = 15
 
 
 class Entertainer:
@@ -56,7 +58,7 @@ class Entertainer:
         results = []
         rewards_links = []
         self.bot.get(self.url)
-        while True:
+        for idx in range(1):
             try:
                 self.bot.switch_to_alert().dismiss()
                 logging.info('alert found while collecting list links')
@@ -87,8 +89,8 @@ class Entertainer:
             try:
                 self.bot.get(i)
             except TimeoutException as e:
-                logging.info('{} did not load in {}'.format(i,self.slug))
-                continue  
+                logging.info('{} did not load in {}'.format(i, self.slug))
+                continue
             logging.info('Checking out link {} of {}'.format(i, self.slug))
             try:
                 self.bot.switch_to_alert().dismiss()
@@ -107,9 +109,11 @@ class Entertainer:
             details = self.bot.find_element(
                 By.CSS_SELECTOR, REWARD_DETAILS_CSS_SELECTORS['Details']).text.strip()
             details = details.split('\n')
-            location = ''
+            area = ''
             website = ''
-            address = ''
+            hotel = ''
+            location = ''
+            mall = ''
             contact = ''
             cuisine = ''
             for k in range(len(details)-1, 0, -2):
@@ -118,13 +122,13 @@ class Entertainer:
                 elif details[k-1] == 'Phone':
                     contact = details[k]
                 elif details[k-1] == 'Area':
-                    location = details[k]
+                    area = details[k]
                 elif details[k-1] == 'Hotel':
-                    address += ' '+details[k]
+                    hotel = details[k]
                 elif details[k-1] == 'Location':
-                    address += details[k]
+                    location = details[k]
                 elif details[k-1] == 'Mall':
-                    address += ' ' + details[k]
+                    mall = details[k]
                 elif details[k-1] == 'Email':
                     pass
                 elif details[k-1] == 'Cuisine':
@@ -145,7 +149,7 @@ class Entertainer:
                 offerTypeExpiry = l.find_elements(
                     By.CSS_SELECTOR, REWARD_DETAILS_CSS_SELECTORS['Offer And Type And Expiry Date'])
                 for j in offerTypeExpiry:
-                    tmp = reward.Reward()
+                    tmp = Reward()
                     tmp.offer = j.find_element(
                         By.CSS_SELECTOR, REWARD_DETAILS_CSS_SELECTORS['Offer']).text.strip()
                     offerType = j.find_element(
@@ -162,8 +166,20 @@ class Entertainer:
                     tmp.logo = logo
                     tmp.website = website
                     tmp.contact = contact
-                    tmp.location = location
-                    tmp.address = address
+                    address = ''
+                    if mall != '' and hotel != '':
+                        address = hotel + ' ' + mall
+                    elif mall == '' and hotel != '':
+                        address = hotel
+                    elif hotel == '' and mall != '':
+                        address = mall
+                    else:
+                        address = location
+                    address += ' ' + area
+                    hashid = '{}{}{}'.format(
+                        self.slug, tmp.offer, tmp.companyName).encode('utf-8')
+                    tmp.id = str(int(hashlib.md5(hashid).hexdigest(), 16))
+                    gmaps.getLocationId(tmp.id, address)
                     tmp.cuisine = cuisine
                     tmp.rating = rating
                     tmp.rewardOrigin = rewardOrigin
