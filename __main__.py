@@ -38,11 +38,13 @@ logging.basicConfig(filename=cfg.logger['filename'],
 
 def App():
     logging.info('Scraping started')
+    SQLConnector().create_tables()
     p = multiprocessing.Pool(4)
     logging.info('Number of threads in pool - {}'.format(_getThreads()))
     p.map(processing, rewards_list)
     p.close()
     p.join()
+    SQLConnector().delete_from_rewards_and_locations()
     logging.info('Scraping over')
 
 
@@ -50,7 +52,6 @@ def processing(rewards_class):
     try:
         results = rewards_class().results
         sql_conn = SQLConnector()
-        sql_conn.create_tables()
         sqlDeletions(sql_conn, results[0].slug)
         sqlInsertions(sql_conn, results)
         logging.info('Successfully updated {}'.format(results[0].slug))

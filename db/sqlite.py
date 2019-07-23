@@ -136,7 +136,7 @@ class SQLConnector:
         except Exception as e:
             logging.info(e)
 
-    def delete_from_rewards_and_origins(self):
+    def delete_from_rewards_and_locations(self):
         sql = 'delete from rewards_and_locations where reward_id=(SELECT t1.reward_id FROM rewards_and_locations t1 LEFT JOIN rewards t2 ON t2.id = t1.reward_id WHERE t2.id IS NULL)'
         cur = self.conn.cursor()
         cur.execute(sql)
