@@ -85,6 +85,13 @@ class EtisalatSmiles:
                         (By.CSS_SELECTOR, VIEW_ALL_PAGE_LOADED_CSS_SELECTOR)))
                 except:
                     continue
+                try:
+                    dismiss_popup_button = self.bot.find_element(
+                        By.CSS_SELECTOR, SURVEY_POPUP_CSS_SELECTOR)
+                    dismiss_popup_button.click()
+                    time.sleep(1)
+                except:
+                    logging.info('no popup found')
                 logging.info(
                     'Checking out link {} of {}'.format(rewardLink, SLUG))
                 numLinks = self.bot.find_elements(

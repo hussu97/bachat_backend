@@ -9,7 +9,6 @@ class SQLConnector:
         self.db_file = cfg.sqlite['host']
         try:
             self.conn = sqlite3.connect(self.db_file)
-            logging.info('Connected to sql v-{}'.format(sqlite3.version))
         except Error as e:
             logging.info(e)
 
@@ -139,6 +138,9 @@ class SQLConnector:
     def delete_from_rewards_and_locations(self):
         sql = 'delete from rewards_and_locations where reward_id=(SELECT t1.reward_id FROM rewards_and_locations t1 LEFT JOIN rewards t2 ON t2.id = t1.reward_id WHERE t2.id IS NULL)'
         cur = self.conn.cursor()
-        cur.execute(sql)
-        cur.close()
-        self.conn.commit()
+        try:
+            cur.execute(sql)
+            cur.close()
+            self.conn.commit()
+        except Exception as e:
+            logging.info(e)

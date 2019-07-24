@@ -39,7 +39,7 @@ logging.basicConfig(filename=cfg.logger['filename'],
 def App():
     logging.info('Scraping started')
     SQLConnector().create_tables()
-    p = multiprocessing.Pool(4)
+    p = multiprocessing.Pool(_getThreads())
     logging.info('Number of threads in pool - {}'.format(_getThreads()))
     p.map(processing, rewards_list)
     p.close()
@@ -56,7 +56,7 @@ def processing(rewards_class):
         sqlInsertions(sql_conn, results)
         logging.info('Successfully updated {}'.format(results[0].slug))
     except Exception as e:
-        logging.info(e)
+        logging.info('===============================SCRIPT WAS BROKEN BECAUSE OF {}======================'.format(e))
 
 
 def _getThreads():
