@@ -39,10 +39,11 @@ def get_paginated_list(conn, numResults, url, start, limit, sql):
     obj['data'] = [dict(zip(tuple(query.keys()), i))
                    for i in query.cursor][obj['start']-1:obj['start']+obj['limit']-1]
     for dat in obj['data']:
-        query = conn.execute(db_statements.GET_ALL_LOCATIONS.format(dat['id']))
+        query = conn.execute(
+            db_statements.GET_ALL_REWARD_LOCATIONS.format(dat['id']))
         dat['locations'] = []
         for q in query.cursor:
-            dat['locations'] = [dict(zip(tuple(query.keys()), q))]
+            dat['locations'] += [dict(zip(tuple(query.keys()), q))]
     conn.close()
     return obj
 
@@ -269,11 +270,10 @@ class Cities(Resource):
             conn.close()
             return obj
 
+
 class SingleCity(Resource):
     def get(self, name):
         program_name = request.args.get('program')
-        # Replace pen's with pen''s for proper sql search
-        name = name.replace("'", "''")
         conn = db_connect.connect()
         if program_name is None or program_name == '':
             rowCount = conn.execute(
@@ -301,6 +301,71 @@ class SingleCity(Resource):
                     name, program_names)
             ))
 
+
+class Locations(Resource):
+    def get(self):
+        program_name = request.args.get('program')
+        lat1, lat2, lon1, lon2 = [
+            float(i) for i in request.args.get('coordinates').split(',')]
+        typeArg = request.args.get('type')
+        conn = db_connect.connect()
+        if typeArg == 'marker':
+            if program_name is None or program_name == '':
+                query = conn.execute(
+                    db_statements.COUNT_REWARDS_BY_LOCATION_REGION.format(lat1, lat2, lon1, lon2))
+                obj = {}
+                obj['data'] = [dict(zip(tuple(query.keys()), i))
+                               for i in query.cursor]
+                return obj
+            else:
+                program_names = get_sql_safe_program_list(
+                    program_name.split(','))
+                query = conn.execute(db_statements.COUNT_REWARDS_BY_LOCATION_REGION_FILTERED.format(
+                    lat1, lat2, lon1, lon2, program_names))
+                print(db_statements.COUNT_REWARDS_BY_LOCATION_REGION_FILTERED.format(
+                    lat1, lat2, lon1, lon2, program_names))
+                obj = {}
+                obj['data'] = [dict(zip(tuple(query.keys()), i))
+                               for i in query.cursor]
+                return obj
+        return 'hello world'
+
+
+class SingleLocationRewards(Resource):
+    def get(self, lat, lon):
+        program_name = request.args.get('program')
+        # lat = float(request.args.get('lat'))
+        # lon = float(request.args.get('lon'))
+        lat = float(lat)
+        lon = float(lon)
+        conn = db_connect.connect()
+        if program_name is None or program_name == '':
+            rowCount = conn.execute(
+                db_statements.COUNT_REWARDS_BY_LOCATION.format(lat, lon)).first()[0]
+            return jsonify(get_paginated_list(
+                conn,
+                rowCount,
+                '/locations/{}/{}?'.format(lat, lon),
+                start=request.args.get('start', 1),
+                limit=request.args.get('limit', 20),
+                sql=db_statements.GET_ALL_REWARDS_BY_LOCATION.format(
+                    lat, lon)
+            ))
+        else:
+            program_names = get_sql_safe_program_list(program_name.split(','))
+            rowCount = conn.execute(
+                db_statements.COUNT_REWARDS_BY_LOCATION_FILTERED.format(lat, lon, program_names)).first()[0]
+            return jsonify(get_paginated_list(
+                conn,
+                rowCount,
+                '/locations/{}/{}?program={}'.format(lat, lon, program_name),
+                start=request.args.get('start', 1),
+                limit=request.args.get('limit', 20),
+                sql=db_statements.GET_ALL_REWARDS_BY_LOCATION_FILTERED.format(
+                    lat, lon, program_names)
+            ))
+
+
 api.add_resource(Rewards, '/rewards')  # Route_1
 api.add_resource(Categories, '/categories')
 api.add_resource(SingleCategory, '/categories/<name>')
@@ -310,6 +375,8 @@ api.add_resource(Companies, '/companies')
 api.add_resource(SingleCompany, '/companies/<name>')
 api.add_resource(Cities, '/cities')
 api.add_resource(SingleCity, '/cities/<name>')
+api.add_resource(Locations, '/locations')
+api.add_resource(SingleLocationRewards, '/locations/<lat>/<lon>')
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port='3000', debug=True)
