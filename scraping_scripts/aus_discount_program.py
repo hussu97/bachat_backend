@@ -49,6 +49,7 @@ class AusDiscountProgram:
             data = categoryDiscounts.text
             soup = BeautifulSoup(data, 'lxml')
             discounts = soup.find_all('div', attrs = {'class' : DISCOUNT_LIST_CSS_SELECTOR})
+            logging.info('Checking out links {} of {}'.format(link,SLUG))
             for discount in discounts:
                 tmp = Reward()
                 tmp.backgroundImage = discount.find('div', attrs = {'class': REWARD_DETAILS_CSS_SELECTORS['Background Image']}).find('img')['src']

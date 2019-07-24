@@ -125,9 +125,7 @@ class EtisalatSmiles:
                         By.CSS_SELECTOR, REWARD_DETAILS_CSS_SELECTORS['Background Image']).get_attribute('src')
                     offerFilter = offerElements.find_element(
                         By.CSS_SELECTOR, OFFER_FILTER_CSS_SELECTOR).text.strip()
-                    logging.info(offerFilter)
                     if offerFilter == CLICKABLE_OFFER:
-                        logging.info('in')
                         offerElements.find_element(
                             By.CSS_SELECTOR, CLICK_OFFER_BUTTON_CSS_SELECTOR).click()
                         time.sleep(1)

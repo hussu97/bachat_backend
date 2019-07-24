@@ -18,3 +18,7 @@ GET_ALL_COMPANIES = "SELECT DISTINCT company_name from rewards;"
 GET_ALL_COMPANIES_FILTERED = "SELECT DISTINCT company_name from rewards WHERE reward_origin IN ({});"
 GET_ALL_CATEGORIES = "SELECT COUNT(offer_type) AS count, offer_type FROM rewards GROUP BY offer_type;"
 GET_ALL_CATEGORIES_FILTERED = "SELECT COUNT(offer_type) AS count, offer_type FROM rewards WHERE reward_origin IN ({}) GROUP BY offer_type;"
+
+GET_ALL_LOCATIONS = "SELECT * FROM locations,rewards_and_locations WHERE locations.id=rewards_and_locations.location_id AND reward_id='{}'"
+GET_ALL_REWARDS_BY_CITY = "SELECT * FROM rewards,locations,rewards_and_locations WHERE rewards.id=rewards_and_locations.reward_id AND locations.id=rewards_and_locations.location_id AND city = '{}'"
+COUNT_CITIES = "SELECT COUNT(*), city FROM rewards_and_locations, locations WHERE id=location_id GROUP BY city"

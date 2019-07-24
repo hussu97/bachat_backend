@@ -9,6 +9,7 @@ class SQLConnector:
         self.db_file = cfg.sqlite['host']
         try:
             self.conn = sqlite3.connect(self.db_file)
+            self.conn.execute("PRAGMA journal_mode=WAL")
         except Error as e:
             logging.info(e)
 
@@ -65,8 +66,8 @@ class SQLConnector:
 
     def create_rewards_and_locations_table(self):
         CREATE_TABLE_STATEMENT = """CREATE TABLE IF NOT EXISTS "rewards_and_locations" (
-            "location_id"	TEXT NOT NULL UNIQUE,
-            "reward_id"	TEXT NOT NULL UNIQUE,
+            "location_id"	TEXT NOT NULL,
+            "reward_id"	TEXT NOT NULL,
             PRIMARY KEY("reward_id","location_id")
         )"""
         try:

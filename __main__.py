@@ -50,11 +50,15 @@ def App():
 
 def processing(rewards_class):
     try:
-        results = rewards_class().results
-        sql_conn = SQLConnector()
-        sqlDeletions(sql_conn, results[0].slug)
-        sqlInsertions(sql_conn, results)
-        logging.info('Successfully updated {}'.format(results[0].slug))
+        rewards_program = rewards_class()
+        results = rewards_program.results
+        if len(results) != 0:
+            sql_conn = SQLConnector()
+            sqlDeletions(sql_conn, results[0].slug)
+            sqlInsertions(sql_conn, results)
+            logging.info('Successfully updated {}'.format(results[0].slug))
+        else :
+            logging.info('List for {} came back 0'.format(rewards_program.__class__.__name__))
     except Exception as e:
         logging.info('===============================SCRIPT WAS BROKEN BECAUSE OF {}======================'.format(e))
 

@@ -103,8 +103,8 @@ class UByEmaar:
                 tmp.rewardOrigin = REWARD_ORIGIN
                 tmp.rewardOriginLogo = REWARD_ORIGIN_LOGO
                 address = [i.text.strip() for i in soup.select(REWARD_DETAILS_CSS_SELECTORS['Address'])]
-                hashid = '{}{}{}'.format(
-                SLUG, address, tmp.companyName).encode('utf-8')
+                hashid = '{}{}{}{}'.format(
+                SLUG, address, tmp.companyName,tmp.offer).encode('utf-8')
                 tmp.id = str(int(hashlib.md5(hashid).hexdigest(), 16))
                 for add in address:
                     if '|' in add:

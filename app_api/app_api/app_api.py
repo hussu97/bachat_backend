@@ -38,6 +38,10 @@ def get_paginated_list(conn, numResults, url, start, limit, sql):
     query = conn.execute(sql)
     obj['data'] = [dict(zip(tuple(query.keys()), i))
                    for i in query.cursor][obj['start']-1:obj['start']+obj['limit']-1]
+    for dat in obj['data']:
+        query = conn.execute(db_statements.GET_ALL_LOCATIONS.format(dat['id']))
+        for q in query.cursor:
+            dat['locations'] = [dict(zip(tuple(query.keys()), q))]
     conn.close()
     return obj
 
