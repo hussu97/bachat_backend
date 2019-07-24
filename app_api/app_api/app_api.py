@@ -40,6 +40,7 @@ def get_paginated_list(conn, numResults, url, start, limit, sql):
                    for i in query.cursor][obj['start']-1:obj['start']+obj['limit']-1]
     for dat in obj['data']:
         query = conn.execute(db_statements.GET_ALL_LOCATIONS.format(dat['id']))
+        dat['locations'] = []
         for q in query.cursor:
             dat['locations'] = [dict(zip(tuple(query.keys()), q))]
     conn.close()
@@ -247,6 +248,59 @@ class SingleCompany(Resource):
             ))
 
 
+class Cities(Resource):
+    def get(self):
+        program_name = request.args.get('program')
+        conn = db_connect.connect()
+        if program_name is None or program_name == '':
+            query = conn.execute(db_statements.GET_ALL_CITIES)
+            obj = {}
+            obj['data'] = [dict(zip(tuple(query.keys()), i))
+                           for i in query.cursor]
+            conn.close()
+            return obj
+        else:
+            program_names = get_sql_safe_program_list(program_name.split(','))
+            query = conn.execute(
+                db_statements.GET_ALL_CITIES_FILTERED.format(program_names))
+            obj = {}
+            obj['data'] = [dict(zip(tuple(query.keys()), i))
+                           for i in query.cursor]
+            conn.close()
+            return obj
+
+class SingleCity(Resource):
+    def get(self, name):
+        program_name = request.args.get('program')
+        # Replace pen's with pen''s for proper sql search
+        name = name.replace("'", "''")
+        conn = db_connect.connect()
+        if program_name is None or program_name == '':
+            rowCount = conn.execute(
+                db_statements.COUNT_REWARDS_BY_CITY.format(name)).first()[0]
+            return jsonify(get_paginated_list(
+                conn,
+                rowCount,
+                '/companies/{}?'.format(name),
+                start=request.args.get('start', 1),
+                limit=request.args.get('limit', 20),
+                sql=db_statements.GET_ALL_REWARDS_BY_CITY.format(
+                    name)
+            ))
+        else:
+            program_names = get_sql_safe_program_list(program_name.split(','))
+            rowCount = conn.execute(
+                db_statements.COUNT_REWARDS_BY_CITY_FILTERED.format(name, program_names)).first()[0]
+            return jsonify(get_paginated_list(
+                conn,
+                rowCount,
+                '/companies/{}?program={}&'.format(name, program_name),
+                start=request.args.get('start', 1),
+                limit=request.args.get('limit', 20),
+                sql=db_statements.GET_ALL_REWARDS_BY_CITY_FILTERED.format(
+                    name, program_names)
+            ))
+
 api.add_resource(Rewards, '/rewards')  # Route_1
 api.add_resource(Categories, '/categories')
 api.add_resource(SingleCategory, '/categories/<name>')
@@ -254,6 +308,8 @@ api.add_resource(Programs, '/programs')
 api.add_resource(SingleProgram, '/programs/<name>')
 api.add_resource(Companies, '/companies')
 api.add_resource(SingleCompany, '/companies/<name>')
+api.add_resource(Cities, '/cities')
+api.add_resource(SingleCity, '/cities/<name>')
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port='3000', debug=True)

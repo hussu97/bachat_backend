@@ -20,5 +20,9 @@ GET_ALL_CATEGORIES = "SELECT COUNT(offer_type) AS count, offer_type FROM rewards
 GET_ALL_CATEGORIES_FILTERED = "SELECT COUNT(offer_type) AS count, offer_type FROM rewards WHERE reward_origin IN ({}) GROUP BY offer_type;"
 
 GET_ALL_LOCATIONS = "SELECT * FROM locations,rewards_and_locations WHERE locations.id=rewards_and_locations.location_id AND reward_id='{}'"
-GET_ALL_REWARDS_BY_CITY = "SELECT * FROM rewards,locations,rewards_and_locations WHERE rewards.id=rewards_and_locations.reward_id AND locations.id=rewards_and_locations.location_id AND city = '{}'"
-COUNT_CITIES = "SELECT COUNT(*), city FROM rewards_and_locations, locations WHERE id=location_id GROUP BY city"
+COUNT_REWARDS_BY_CITY = "SELECT COUNT(*) FROM locations,rewards_and_locations,rewards WHERE rewards.id=reward_id AND locations.id=location_id AND city='{}'"
+COUNT_REWARDS_BY_CITY_FILTERED = "SELECT COUNT(*) FROM rewards_and_locations, locations,rewards WHERE locations.id=location_id AND rewards.id=reward_id AND city='{}' AND reward_origin IN ({})"
+GET_ALL_REWARDS_BY_CITY = "SELECT * FROM locations,rewards_and_locations,rewards WHERE rewards.id=reward_id AND locations.id=location_id AND city = '{}'"
+GET_ALL_REWARDS_BY_CITY_FILTERED = "SELECT * FROM locations,rewards_and_locations,rewards WHERE rewards.id=reward_id AND locations.id=location_id AND city = '{}' AND reward_origin IN ({})"
+GET_ALL_CITIES = "SELECT COUNT(*) as count, city FROM rewards_and_locations,rewards, locations WHERE rewards.id=reward_id AND locations.id=location_id GROUP BY city"
+GET_ALL_CITIES_FILTERED = "SELECT COUNT(*) as count, city FROM rewards_and_locations,rewards, locations WHERE locations.id=location_id AND rewards.id=reward_id AND reward_origin in ({}) GROUP BY city"
