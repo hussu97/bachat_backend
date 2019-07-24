@@ -56,11 +56,11 @@ def processing(rewards_class):
             sql_conn = SQLConnector()
             sqlDeletions(sql_conn, results[0].slug)
             sqlInsertions(sql_conn, results)
-            logging.info('Successfully updated {}'.format(results[0].slug))
+            logging.info('Successfully updated {}'.format(rewards_program.__class__.__name__))
         else :
-            logging.info('List for {} came back 0'.format(rewards_program.__class__.__name__))
+            logging.warning('List for {} came back 0'.format(rewards_program.__class__.__name__))
     except Exception as e:
-        logging.info('===============================SCRIPT WAS BROKEN BECAUSE OF {}======================'.format(e))
+        logging.error('===============================SCRIPT WAS BROKEN BECAUSE OF {} IN {}======================'.format(e,rewards_program.__class__.__name__))
 
 
 def _getThreads():

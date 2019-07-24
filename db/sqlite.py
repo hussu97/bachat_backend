@@ -11,7 +11,7 @@ class SQLConnector:
             self.conn = sqlite3.connect(self.db_file)
             self.conn.execute("PRAGMA journal_mode=WAL")
         except Error as e:
-            logging.info(e)
+            logging.error(e)
 
     def create_tables(self):
         self.create_rewards_table()
@@ -45,7 +45,7 @@ class SQLConnector:
             cur.execute(CREATE_TABLE_STATEMENT)
             cur.close()
         except Error as e:
-            logging.info(e)
+            logging.error(e)
 
     def create_locations_table(self):
         CREATE_TABLE_STATEMENT = """CREATE TABLE IF NOT EXISTS "locations" (
@@ -62,7 +62,7 @@ class SQLConnector:
             cur.execute(CREATE_TABLE_STATEMENT)
             cur.close()
         except Error as e:
-            logging.info(e)
+            logging.error(e)
 
     def create_rewards_and_locations_table(self):
         CREATE_TABLE_STATEMENT = """CREATE TABLE IF NOT EXISTS "rewards_and_locations" (
@@ -75,7 +75,7 @@ class SQLConnector:
             cur.execute(CREATE_TABLE_STATEMENT)
             cur.close()
         except Error as e:
-            logging.info(e)
+            logging.error(e)
 
     def insert_reward(self, sql, reward):
         cur = self.conn.cursor()
@@ -83,8 +83,8 @@ class SQLConnector:
             cur.execute(sql, reward)
             cur.close()
             self.conn.commit()
-        except Exception as e:
-            logging.info(e)
+        except Error as e:
+            logging.error(e)
 
     def delete_by_slug(self, slug):
         sql = 'DELETE FROM rewards where slug = ?'
@@ -133,8 +133,8 @@ class SQLConnector:
             cur.execute(sql, location)
             cur.close()
             self.conn.commit()
-        except Exception as e:
-            logging.info(e)
+        except Error as e:
+            logging.error(e)
 
     def delete_from_rewards_and_locations(self):
         sql = 'delete from rewards_and_locations where reward_id=(SELECT t1.reward_id FROM rewards_and_locations t1 LEFT JOIN rewards t2 ON t2.id = t1.reward_id WHERE t2.id IS NULL)'
@@ -143,5 +143,5 @@ class SQLConnector:
             cur.execute(sql)
             cur.close()
             self.conn.commit()
-        except Exception as e:
-            logging.info(e)
+        except Error as e:
+            logging.error(e)

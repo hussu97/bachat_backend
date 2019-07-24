@@ -30,7 +30,8 @@ CATEGORY_TYPES = {
     'Restaurants and Bars': 'Dining',
     'Services': 'Services',
     'Retail': 'Retail',
-    'Body': 'Health'
+    'Body': 'Health',
+    'Kids' : 'Entertainment'
 }
 
 REWARD_ORIGIN_LOGO = 'https://etsitecdn.theentertainerme.com/logo.png'
@@ -89,7 +90,7 @@ class Entertainer:
             try:
                 self.bot.get(i)
             except TimeoutException as e:
-                logging.info('{} did not load in {}'.format(i, self.slug))
+                logging.warning('{} did not load in {}'.format(i, self.slug))
                 continue
             logging.info('Checking out link {} of {}'.format(i, self.slug))
             try:
@@ -157,7 +158,7 @@ class Entertainer:
                     try:
                         tmp.offerType = CATEGORY_TYPES[offerType]
                     except Exception as e:
-                        logging.info(offerType)
+                        logging.warning(offerType)
                     tmp.expiryDate = j.find_element(
                         By.CSS_SELECTOR, REWARD_DETAILS_CSS_SELECTORS['Expiry Date']).text.replace("Valid until", "").strip()
                     tmp.link = link

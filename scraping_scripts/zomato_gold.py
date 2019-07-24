@@ -94,7 +94,8 @@ class ZomatoGold:
                 page_css_elements[name] = (
                     self.bot.find_elements(By.CSS_SELECTOR, cssSelector))
             except Exception as e:
-                logging.info(e)
+                logging.warning('Elements not found in {} of {}. Error msg {}'.format(
+                    pageNum, self.slug, e))
         offerTypeIdx = 0
         results = []
         for idx, _ in enumerate(page_css_elements['Company Name']):
@@ -103,7 +104,7 @@ class ZomatoGold:
                 tmp.backgroundImage = re.search(
                     IMAGE_REGEX_EXPRESSION, page_css_elements['Background Image'][idx].get_attribute('style')).group(0)
             except Exception as e:
-                logging.info('found {} error in page {} item {} for {} place'.format(
+                logging.error('found {} error in page {} item {} for {} place'.format(
                     e, pageNum, idx+1, city))
             tmp.companyName = page_css_elements['Company Name'][idx].text.strip(
             )
