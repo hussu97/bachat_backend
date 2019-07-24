@@ -58,7 +58,7 @@ class Entertainer:
         results = []
         rewards_links = []
         self.bot.get(self.url)
-        for idx in range(1):
+        while True:
             try:
                 self.bot.switch_to_alert().dismiss()
                 logging.info('alert found while collecting list links')
