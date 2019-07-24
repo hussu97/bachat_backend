@@ -27,14 +27,15 @@ def getLocationId(rewardId, address):
             logging.info('Used api for location of {}'.format(address))
             dat = data['candidates'][0]
             formatted_address = dat['formatted_address'].replace(' - United Arab Emirates','')
+            city = ''
             for c in CITIES:
                 if c in formatted_address:
                     city = c
                     formatted_address = formatted_address.replace(' - {}'.format(city),'')
                     formatted_address = formatted_address.replace('{}'.format(city),'')
-                    if formatted_address == '':
-                        formatted_address = dat['name']
                     break
+            if formatted_address == '':
+                formatted_address = dat['name']
             place_id = dat['place_id']
             loc = dat['geometry']['location']
             lat = loc['lat']
