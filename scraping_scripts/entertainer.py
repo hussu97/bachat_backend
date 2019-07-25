@@ -62,7 +62,7 @@ class Entertainer:
         while True:
             try:
                 self.bot.switch_to_alert().dismiss()
-                logging.info('alert found while collecting list links')
+                logging.error('alert found while collecting list links')
                 time.sleep(5)
                 self.bot.switch_to_alert().dismiss()
                 logging.info('removed alert again')
@@ -95,7 +95,7 @@ class Entertainer:
             logging.info('Checking out link {} of {}'.format(i, self.slug))
             try:
                 self.bot.switch_to_alert().dismiss()
-                logging.info('alert found when parsing companies')
+                logging.error('alert found when parsing companies')
                 WebDriverWait(self.bot, 20).until(EC.presence_of_element_located(
                     (By.CSS_SELECTOR, REWARD_DETAILS_CSS_SELECTORS['Background Image'])))
             except NoAlertPresentException as e:
