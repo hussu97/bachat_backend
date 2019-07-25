@@ -6,8 +6,40 @@ import logging
 
 MAPS_API = 'https://maps.googleapis.com/maps/api/place/findplacefromtext/json?key={}&inputtype=textquery&fields=name,formatted_address,geometry/location,place_id&language=en&input={}'
 
-CITIES = ['Abu Dhabi', 'Dubai', 'Sharjah', 'Ajman',
-          'Fujairah', 'Umm Al Quawain', 'Ras Al Khaimah', 'إمارة دبيّ', 'Al Ain']
+
+CITIES = {
+    'Abu Dhabi': 'Abu Dhabi',
+    'Abu-Dhabi': 'Abu Dhabi',
+    'Sharjah': 'Sharjah',
+    'Dubai': 'Dubai',
+    'Ajman': 'Ajman',
+    'Fujairah': 'Fujairah',
+    'Fujaira': 'Fujairah',
+    'Umm Al Quawain': 'Umm Al Quwain',
+    'Umm Al Quwain': 'Umm Al Quwain',
+    'Umm-Al-Quwain': 'Umm Al Quwain',
+    'Umm-Al-Quawain': 'Umm Al Quwain',
+    'Al Ain': 'Abu Dhabi',
+    'Al-Ain': 'Abu Dhabi',
+    'Ras Al Khaimah': 'Ras Al Khaimah',
+    'Ras-Al-Khaimah': 'Ras Al Khaimah',
+    'Oud Metha': 'Dubai',
+    'Jumeirah': 'Dubai',
+    'Jumeira': 'Dubai',
+    'إمارة دبيّ': 'Dubai',
+    'Business Bay': 'Dubai',
+    'Sheikh Zayed Road': 'Dubai',
+    'Deira': 'Dubai',
+    'Jebal Ali': 'Dubai',
+    'Baniyas': 'Dubai',
+    'Burjuman': 'Dubai',
+    'Sahara Centre': 'Sharjah',
+    'Saadiyat': 'Abu Dhabi'
+}
+# Value appended to when we want to 'clean' the locations table of multiple same addresses
+# for the same reward, which may occur when trying to change the format of the address
+# that is checked in google
+REWARD_ID_SUFFIX = '1'
 
 
 def checkLocation(locationId, sqlConn):
@@ -16,11 +48,12 @@ def checkLocation(locationId, sqlConn):
 
 def getLocationId(rewardId, address):
     sqlConn = SQLConnector()
-    address = address.replace('&','and')
-    address = address.replace(',','')
+    address = address.replace('&', 'and')
+    address = address.replace(',', '')
     locationId = str(int(hashlib.md5(address.encode('utf-8')).hexdigest(), 16))
-    if checkLocation(locationId,sqlConn):
-        sqlConn.insert_reward_and_location(rewardId, locationId)
+    if checkLocation(locationId, sqlConn):
+        sqlConn.insert_reward_and_location(
+            rewardId+REWARD_ID_SUFFIX, locationId)
         del sqlConn
         return locationId
     else:
@@ -28,22 +61,26 @@ def getLocationId(rewardId, address):
         if len(data['candidates']) > 0:
             logging.info('Used api for location of {}'.format(address))
             dat = data['candidates'][0]
-            formatted_address = dat['formatted_address'].replace(' - United Arab Emirates','')
-            formatted_address = dat['formatted_address'].replace(' - AE','')
+            formatted_address = dat['formatted_address'].replace(
+                ' - United Arab Emirates', '')
+            formatted_address = formatted_address.replace(' - AE', '')
             city = ''
-            for c in CITIES:
-                if c.lower() in formatted_address.lower().replace('-',' '):
-                    city = c
-                    formatted_address = formatted_address.replace(' - {}'.format(city),'')
-                    formatted_address = formatted_address.replace('{}'.format(city),'')
+            for key, value in CITIES.items():
+                if key.lower() in formatted_address.lower().replace('-', ' '):
+                    city = value
+                    formatted_address = formatted_address.replace(
+                        ' - {}'.format(city), '')
+                    formatted_address = formatted_address.replace(
+                        '{}'.format(city), '')
                     break
             if city == '':
-                for c in CITIES:
-                    if c.lower() in address.lower().replace('-',' '):
-                        city = c
+                for key, value in CITIES.items():
+                    if key.lower() in address.lower().replace('-', ' '):
+                        city = value
                         break
             if city == '':
-                logging.warn('unnamed city with address {} and formatted_addres {}'.format(address,formatted_address))
+                logging.warn('unnamed city with address {} and formatted_address {}'.format(
+                    address, formatted_address))
             if formatted_address == '':
                 formatted_address = dat['name']
             place_id = dat['place_id']
@@ -61,10 +98,10 @@ def getLocationId(rewardId, address):
                     place_id
                 )
             )
-            sqlConn.insert_reward_and_location(rewardId, locationId)
+            sqlConn.insert_reward_and_location(
+                rewardId+REWARD_ID_SUFFIX, locationId)
             del sqlConn
             return locationId
         else:
             del sqlConn
             return 0
-            

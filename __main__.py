@@ -128,4 +128,7 @@ def sqlInsertions(sql_conn, results):
 
 
 if __name__ == '__main__':
-    App()
+    try:
+        App()
+    except Exception as e:
+        logging.critical('======================CRITICAL EXCEPTION {}======================='.format(e))
