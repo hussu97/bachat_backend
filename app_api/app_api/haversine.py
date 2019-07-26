@@ -12,4 +12,4 @@ def measureDistanceBetweenCoordinates(lat1, lon1, lat2, lon2):
     c = 2 * atan2(sqrt(a), sqrt(1-a))
     d = R * c
     # return value in meters
-    return int((d * 1000)*100)/100.0
+    return round((d * 1000),2)
