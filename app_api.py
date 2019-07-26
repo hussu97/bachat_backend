@@ -1,21 +1,25 @@
 from flask import Flask, request, jsonify, abort
 from flask_restful import Resource, Api
-from sqlalchemy import create_engine
-from json import dumps
 import psycopg2
-from app_api.haversine import measureDistanceBetweenCoordinates as mDBC
-import app_api.db_statements as db_statements
-import app_api.config_dev as cfg
-db_connect = psycopg2.connect(
-    user=cfg.pg['user'], 
-    password=cfg.pg['password'],
-    host=cfg.pg['host'], 
-    port=cfg.pg['port'], 
-    database=cfg.pg['database']
+from psycopg2 import pool,Error, DatabaseError
+from haversine import measureDistanceBetweenCoordinates as mDBC
+import db_statements as db_statements
+import config_dev as cfg
+try:
+    database_pool = psycopg2.pool.ThreadedConnectionPool(
+        cfg.pg['minPool'],
+        cfg.pg['maxPool'],
+        user=cfg.pg['user'], 
+        password=cfg.pg['password'],
+        host=cfg.pg['host'], 
+        port=cfg.pg['port'], 
+        database=cfg.pg['database']
     )
+except DatabaseError as e:
+    print('Database error {}'.format(e))
 
-app = Flask(__name__)
-api = Api(app, prefix='/api/v1')
+application = Flask(__name__)
+api = Api(application, prefix='/api/v1')
 
 
 def getPaginatedLinks(start, limit, numResults, url):
@@ -93,12 +97,12 @@ def get_sql_safe_program_list(programs):
 class Rewards(Resource):
     def get(self):
         program_name = request.args.get('program')
+        db_connect = database_pool.getconn()
         conn = db_connect.cursor()
         if program_name is None or program_name == '':
             conn.execute(db_statements.COUNT_REWARDS)
             rowCount = conn.fetchone()[0]
-            print(rowCount)
-            return jsonify(get_paginated_list(
+            res = jsonify(get_paginated_list(
                 conn,
                 rowCount,
                 '/rewards?',
@@ -106,12 +110,15 @@ class Rewards(Resource):
                 limit=request.args.get('limit', 20),
                 sql=db_statements.GET_ALL_REWARDS
             ))
+            database_pool.putconn(db_connect)
+            return res
         else:
+            
             program_names = get_sql_safe_program_list(program_name.split(','))
             conn.execute(
                 db_statements.COUNT_REWARDS_FILTERED.format(program_names))
             rowCount = conn.fetchone()[0]
-            return jsonify(get_paginated_list(
+            res = jsonify(get_paginated_list(
                 conn,
                 rowCount,
                 '/rewards?program={}&'.format(program_name),
@@ -120,17 +127,21 @@ class Rewards(Resource):
                 sql=db_statements.GET_ALL_REWARDS_FILTERED.format(
                     program_names)
             ))
+            database_pool.putconn(db_connect)
+            return res
 
 
 class Categories(Resource):
     def get(self):
         program_name = request.args.get('program')
+        db_connect = database_pool.getconn()
         conn = db_connect.cursor()
         if program_name is None or program_name == '':
             conn.execute(db_statements.GET_ALL_CATEGORIES)
             obj = fix_categories_list([dict(zip(tuple([desc[0] for desc in conn.description]), i))
                                        for i in conn.fetchall()])
             conn.close()
+            database_pool.putconn(db_connect)
             return obj
         else:
             program_names = get_sql_safe_program_list(program_name.split(','))
@@ -140,18 +151,20 @@ class Categories(Resource):
             obj['data'] = [dict(zip(tuple([desc[0] for desc in conn.description]), i))
                            for i in conn.fetchall()]
             conn.close()
+            database_pool.putconn(db_connect)
             return obj
 
 
 class SingleCategory(Resource):
     def get(self, name):
         program_name = request.args.get('program')
+        db_connect = database_pool.getconn()
         conn = db_connect.cursor()
         if program_name is None or program_name == '':
             conn.execute(
                 db_statements.COUNT_REWARDS_BY_CATEGORY.format(name))
             rowCount = conn.fetchone()[0]
-            return jsonify(get_paginated_list(
+            res = jsonify(get_paginated_list(
                 conn,
                 rowCount,
                 '/categories/{}?'.format(name),
@@ -160,12 +173,14 @@ class SingleCategory(Resource):
                 sql=db_statements.GET_ALL_REWARDS_BY_CATEGORY.format(
                     name)
             ))
+            database_pool.putconn(db_connect)
+            return res
         else:
             program_names = get_sql_safe_program_list(program_name.split(','))
             conn.execute(
                 db_statements.COUNT_REWARDS_BY_CATEGORY_FILTERED.format(name, program_names))
             rowCount = conn.fetchone()[0]
-            return jsonify(get_paginated_list(
+            res = jsonify(get_paginated_list(
                 conn,
                 rowCount,
                 '/categories/{}?program={}&'.format(name, program_name),
@@ -174,11 +189,14 @@ class SingleCategory(Resource):
                 sql=db_statements.GET_ALL_REWARDS_BY_CATEGORY_FILTERED.format(
                     name, program_names)
             ))
+            database_pool.putconn(db_connect)
+            return res
 
 
 class Programs(Resource):
     def get(self):
         program_name = request.args.get('program')
+        db_connect = database_pool.getconn()
         conn = db_connect.cursor()
         if program_name is None or program_name == '':
             conn.execute(db_statements.GET_ALL_PROGRAMS)
@@ -186,6 +204,7 @@ class Programs(Resource):
             obj['data'] = [dict(zip(tuple([desc[0] for desc in conn.description]), i))
                            for i in conn.fetchall()]
             conn.close()
+            database_pool.putconn(db_connect)
             return obj
         else:
             program_names = get_sql_safe_program_list(program_name.split(','))
@@ -195,16 +214,18 @@ class Programs(Resource):
             obj['data'] = [dict(zip(tuple([desc[0] for desc in conn.description]), i))
                            for i in conn.fetchall()]
             conn.close()
+            database_pool.putconn(db_connect)
             return obj
 
 
 class SingleProgram(Resource):
     def get(self, name):
+        db_connect = database_pool.getconn()
         conn = db_connect.cursor()
         conn.execute(
             db_statements.COUNT_REWARDS_BY_PROGRAM.format(name))
         rowCount = conn.fetchone()[0]
-        return jsonify(get_paginated_list(
+        res = jsonify(get_paginated_list(
             conn,
             rowCount,
             '/programs/{}?'.format(name),
@@ -213,17 +234,21 @@ class SingleProgram(Resource):
             sql=db_statements.GET_ALL_REWARDS_BY_PROGRAM.format(
                 name)
         ))
+        database_pool.putconn(db_connect)
+        return res
 
 
 class Companies(Resource):
     def get(self):
         program_name = request.args.get('program')
+        db_connect = database_pool.getconn()
         conn = db_connect.cursor()
         if program_name is None or program_name == '':
             conn.execute(db_statements.GET_ALL_COMPANIES)
             obj = {}
             obj['data'] = [i[0] for i in conn.fetchall()]
             conn.close()
+            database_pool.putconn(db_connect)
             return obj
         else:
             program_names = get_sql_safe_program_list(program_name.split(','))
@@ -232,6 +257,7 @@ class Companies(Resource):
             obj = {}
             obj['data'] = [i[0] for i in conn.fetchall()]
             conn.close()
+            database_pool.putconn(db_connect)
             return obj
 
 
@@ -240,12 +266,13 @@ class SingleCompany(Resource):
         program_name = request.args.get('program')
         # Replace pen's with pen''s for proper sql search
         name = name.replace("'", "''")
+        db_connect = database_pool.getconn()
         conn = db_connect.cursor()
         if program_name is None or program_name == '':
             conn.execute(
                 db_statements.COUNT_REWARDS_BY_COMPANY_NAME.format(name))
             rowCount = conn.fetchone()[0]
-            return jsonify(get_paginated_list(
+            res = jsonify(get_paginated_list(
                 conn,
                 rowCount,
                 '/companies/{}?'.format(name),
@@ -254,12 +281,14 @@ class SingleCompany(Resource):
                 sql=db_statements.GET_ALL_REWARDS_BY_COMPANY_NAME.format(
                     name)
             ))
+            database_pool.putconn(db_connect)
+            return res
         else:
             program_names = get_sql_safe_program_list(program_name.split(','))
             conn.execute(
                 db_statements.COUNT_REWARDS_BY_COMPANY_NAME_FILTERED.format(name, program_names))
             rowCount = conn.fetchone()[0]
-            return jsonify(get_paginated_list(
+            res = jsonify(get_paginated_list(
                 conn,
                 rowCount,
                 '/companies/{}?program={}&'.format(name, program_name),
@@ -268,11 +297,14 @@ class SingleCompany(Resource):
                 sql=db_statements.GET_ALL_REWARDS_BY_COMPANY_NAME_FILTERED.format(
                     name, program_names)
             ))
+            database_pool.putconn(db_connect)
+            return res
 
 
 class Cities(Resource):
     def get(self):
         program_name = request.args.get('program')
+        db_connect = database_pool.getconn()
         conn = db_connect.cursor()
         if program_name is None or program_name == '':
             conn.execute(db_statements.GET_ALL_CITIES)
@@ -280,6 +312,7 @@ class Cities(Resource):
             obj['data'] = [dict(zip(tuple([desc[0] for desc in conn.description]), i))
                            for i in conn.fetchall()]
             conn.close()
+            database_pool.putconn(db_connect)
             return obj
         else:
             program_names = get_sql_safe_program_list(program_name.split(','))
@@ -289,18 +322,20 @@ class Cities(Resource):
             obj['data'] = [dict(zip(tuple([desc[0] for desc in conn.description]), i))
                            for i in conn.fetchall()]
             conn.close()
+            database_pool.putconn(db_connect)
             return obj
 
 
 class SingleCity(Resource):
     def get(self, name):
         program_name = request.args.get('program')
+        db_connect = database_pool.getconn()
         conn = db_connect.cursor()
         if program_name is None or program_name == '':
             conn.execute(
                 db_statements.COUNT_REWARDS_BY_CITY.format(name))
             rowCount = conn.fetchone()[0]
-            return jsonify(get_paginated_list(
+            res = jsonify(get_paginated_list(
                 conn,
                 rowCount,
                 '/companies/{}?'.format(name),
@@ -309,12 +344,14 @@ class SingleCity(Resource):
                 sql=db_statements.GET_ALL_REWARDS_BY_CITY.format(
                     name)
             ))
+            database_pool.putconn(db_connect)
+            return res
         else:
             program_names = get_sql_safe_program_list(program_name.split(','))
             conn.execute(
                 db_statements.COUNT_REWARDS_BY_CITY_FILTERED.format(name, program_names))
             rowCount = conn.fetchone()[0]
-            return jsonify(get_paginated_list(
+            res = jsonify(get_paginated_list(
                 conn,
                 rowCount,
                 '/companies/{}?program={}&'.format(name, program_name),
@@ -323,6 +360,8 @@ class SingleCity(Resource):
                 sql=db_statements.GET_ALL_REWARDS_BY_CITY_FILTERED.format(
                     name, program_names)
             ))
+            database_pool.putconn(db_connect)
+            return res
 
 
 class Locations(Resource):
@@ -331,6 +370,7 @@ class Locations(Resource):
         lat1, lat2, lon1, lon2 = [
             float(i) for i in request.args.get('coordinates').split(',')]
         typeArg = request.args.get('type')
+        db_connect = database_pool.getconn()
         conn = db_connect.cursor()
         if typeArg == 'marker':
             if program_name is None or program_name == '':
@@ -357,12 +397,13 @@ class SingleLocationRewards(Resource):
         program_name = request.args.get('program')
         lat = float(lat)
         lon = float(lon)
+        db_connect = database_pool.getconn()
         conn = db_connect.cursor()
         if program_name is None or program_name == '':
             conn.execute(
                 db_statements.COUNT_REWARDS_BY_LOCATION.format(lat, lon))
             rowCount = conn.fetchone()[0]
-            return jsonify(get_paginated_list(
+            res = jsonify(get_paginated_list(
                 conn,
                 rowCount,
                 '/locations/{}/{}?'.format(lat, lon),
@@ -371,12 +412,14 @@ class SingleLocationRewards(Resource):
                 sql=db_statements.GET_ALL_REWARDS_BY_LOCATION.format(
                     lat, lon)
             ))
+            database_pool.putconn(db_connect)
+            return res
         else:
             program_names = get_sql_safe_program_list(program_name.split(','))
             conn.execute(
                 db_statements.COUNT_REWARDS_BY_LOCATION_FILTERED.format(lat, lon, program_names))
             rowCount = conn.fetchone()[0]
-            return jsonify(get_paginated_list(
+            res = jsonify(get_paginated_list(
                 conn,
                 rowCount,
                 '/locations/{}/{}?program={}&'.format(lat, lon, program_name),
@@ -385,11 +428,14 @@ class SingleLocationRewards(Resource):
                 sql=db_statements.GET_ALL_REWARDS_BY_LOCATION_FILTERED.format(
                     lat, lon, program_names)
             ))
+            database_pool.putconn(db_connect)
+            return res
 
 
 class Coordinates(Resource):
     def get(self, lat, lon):
         program_name = request.args.get('program')
+        db_connect = database_pool.getconn()
         conn = db_connect.cursor()
         lat1 = float(lat)
         lon1 = float(lon)
@@ -422,6 +468,7 @@ class Coordinates(Resource):
                 for q in conn.fetchall():
                     dat['locations'] += [dict(zip(tuple([desc[0] for desc in conn.description]), q))]
             conn.close()
+            database_pool.putconn(db_connect)
             return obj
         else:
             tempDict = {}
@@ -454,6 +501,7 @@ class Coordinates(Resource):
                                          for x in conn.fetchall()]
                 obj['data'] += li
             conn.close()
+            database_pool.putconn(db_connect)
             return obj
 
 
@@ -471,4 +519,5 @@ api.add_resource(SingleLocationRewards, '/locations/<lat>/<lon>')
 api.add_resource(Coordinates, '/coordinates/<lat>/<lon>')
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port='3000', debug=True)
+    application.debug = True
+    application.run()
