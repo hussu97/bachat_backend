@@ -85,8 +85,8 @@ def getLocationId(rewardId, address):
                 formatted_address = dat['name']
             place_id = dat['place_id']
             loc = dat['geometry']['location']
-            lat = loc['lat']
-            lon = loc['lng']
+            lat = round(loc['lat'],4)
+            lon = round(loc['lng'],4)
             sqlConn.insert_location(
                 (
                     locationId,
