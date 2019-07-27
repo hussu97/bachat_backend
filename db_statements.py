@@ -37,14 +37,14 @@ GET_ALL_CITIES_FILTERED = "SELECT COUNT(*) as count, city FROM rewards_and_locat
 
 COUNT_REWARDS_BY_LOCATION_REGION = "SELECT count(offer) as count,formatted_address, lat,lon FROM locations,rewards_and_locations,rewards WHERE locations.id = location_id AND rewards.id = reward_id AND lat BETWEEN  {} AND {} AND lon BETWEEN  {} AND {} group by lat,lon,formatted_address"
 COUNT_REWARDS_BY_LOCATION_REGION_FILTERED = "SELECT count(offer) as count,formatted_address, lat,lon FROM locations,rewards_and_locations,rewards WHERE locations.id = location_id AND rewards.id = reward_id AND lat BETWEEN  {} AND {} AND lon BETWEEN  {} AND {} AND reward_origin IN ({}) group by lat,lon,formatted_address"
-GET_ALL_REWARDS_BY_LOCATION_REGION = f"SELECT {rewards_data} FROM locations,rewards_and_locations,rewards WHERE locations.id = location_id AND rewards.id = reward_id AND lat BETWEEN "+"{} AND {} AND lon BETWEEN {} AND {} AND reward_origin IN ({}) GROUP BY lat,lon"
-GET_ALL_REWARDS_BY_LOCATION = f"SELECT {rewards_data} FROM locations,rewards_and_locations,rewards WHERE locations.id = location_id AND rewards.id = reward_id AND lat ="+"{} AND lon ={}"
-COUNT_REWARDS_BY_LOCATION = "SELECT COUNT(*) FROM locations,rewards_and_locations,rewards WHERE locations.id = location_id AND rewards.id = reward_id AND lat ={} AND lon ={}"
-GET_ALL_REWARDS_BY_LOCATION_FILTERED = f"SELECT {rewards_data} FROM locations,rewards_and_locations,rewards WHERE locations.id = location_id AND rewards.id = reward_id AND lat ="+"{} AND lon ={} AND reward_origin IN ({})"
-COUNT_REWARDS_BY_LOCATION_FILTERED = "SELECT COUNT(*) FROM locations,rewards_and_locations,rewards WHERE locations.id = location_id AND rewards.id = reward_id AND lat ={} AND lon ={} AND reward_origin IN ({})"
+GET_ALL_REWARDS_BY_LOCATION_REGION = f"SELECT {rewards_data} FROM locations,rewards_and_locations,rewards WHERE locations.id = location_id AND rewards.id = reward_id AND lat BETWEEN "+"{} AND {} AND lon BETWEEN {} AND {} AND reward_origin IN ({})"
+GET_ALL_REWARDS_BY_LOCATION = f"SELECT {rewards_data} FROM locations,rewards_and_locations,rewards WHERE locations.id = location_id AND rewards.id = reward_id AND lat::numeric ="+"{} AND lon::numeric ={}"
+COUNT_REWARDS_BY_LOCATION = "SELECT COUNT(*) FROM locations,rewards_and_locations,rewards WHERE locations.id = location_id AND rewards.id = reward_id AND lat::numeric ={} AND lon::numeric ={}"
+GET_ALL_REWARDS_BY_LOCATION_FILTERED = f"SELECT {rewards_data} FROM locations,rewards_and_locations,rewards WHERE locations.id = location_id AND rewards.id = reward_id AND lat::numeric ="+"{} AND lon::numeric ={} AND reward_origin IN ({})"
+COUNT_REWARDS_BY_LOCATION_FILTERED = "SELECT COUNT(*) FROM locations,rewards_and_locations,rewards WHERE locations.id = location_id AND rewards.id = reward_id AND lat::numeric ={} AND lon::numeric ={} AND reward_origin IN ({})"
 
-GET_UNIQUE_LOCATIONS_COORDINATES = "SELECT id, lat,lon FROM locations,rewards_and_locations WHERE id=location_id GROUP BY id"
-GET_UNIQUE_LOCATIONS_COORDINATES_FILTERED = "SELECT locations.id, lat,lon FROM locations,rewards_and_locations,rewards WHERE locations.id=location_id AND rewards.id=reward_id AND reward_origin IN ({}) GROUP BY locations.id"
+GET_UNIQUE_LOCATIONS_COORDINATES = "SELECT id, lat,lon FROM locations,rewards_and_locations WHERE id=location_id GROUP BY id,lat,lon"
+GET_UNIQUE_LOCATIONS_COORDINATES_FILTERED = "SELECT locations.id, lat,lon FROM locations,rewards_and_locations,rewards WHERE locations.id=location_id AND rewards.id=reward_id AND reward_origin IN ({}) GROUP BY locations.id,lat,lon"
 GET_REWARDS_BY_LOCATION_ID = f"SELECT {rewards_data} FROM rewards_and_locations, locations, rewards WHERE rewards.id = reward_id AND locations.id = location_id AND location_id = '"+"{}'"
 GET_REWARDS_BY_LOCATION_ID_FILTERED = f"SELECT {rewards_data} FROM rewards_and_locations, locations, rewards WHERE rewards.id = reward_id AND locations.id = location_id AND location_id = '"+"{}' AND reward_origin IN ({})"
 
