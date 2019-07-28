@@ -19,7 +19,7 @@ except DatabaseError as e:
     print('Database error {}'.format(e))
 
 application = Flask(__name__)
-api = Api(application, prefix='/api/v1')
+api = Api(application)
 
 
 def getPaginatedLinks(start, limit, numResults, url):
@@ -553,19 +553,98 @@ class Coordinates(Resource):
             database_pool.putconn(db_connect)
             abort(500)
 
+class AllRewards(Resource):
+    def get(self):
+        db_connect = database_pool.getconn()
+        try:
+            conn = db_connect.cursor()
+            conn.execute(db_statements.GET_REWARDS_TABLE)
+            obj = {}
+            obj['data'] = [dict(zip(tuple([desc[0] for desc in conn.description]), i))
+                            for i in conn.fetchall()]
+            database_pool.putconn(db_connect)
+            return obj
+        except Error as e:
+            database_pool.putconn(db_connect)
+            abort(500)
 
-api.add_resource(Rewards, '/rewards')  # Route_1
-api.add_resource(Categories, '/categories')
-api.add_resource(SingleCategory, '/categories/<name>')
-api.add_resource(Programs, '/programs')
-api.add_resource(SingleProgram, '/programs/<name>')
-api.add_resource(Companies, '/companies')
-api.add_resource(SingleCompany, '/companies/<name>')
-api.add_resource(Cities, '/cities')
-api.add_resource(SingleCity, '/cities/<name>')
-api.add_resource(Locations, '/locations')
-api.add_resource(SingleLocationRewards, '/locations/<lat>/<lon>')
-api.add_resource(Coordinates, '/coordinates/<lat>/<lon>')
+class AllLocations(Resource):
+    def get(self):
+        db_connect = database_pool.getconn()
+        try:
+            conn = db_connect.cursor()
+            conn.execute(db_statements.GET_LOCATIONS_TABLE)
+            obj = {}
+            obj['data'] = [dict(zip(tuple([desc[0] for desc in conn.description]), i))
+                            for i in conn.fetchall()]
+            database_pool.putconn(db_connect)
+            return obj
+        except Error as e:
+            database_pool.putconn(db_connect)
+            abort(500)
+
+class AllRewardsAndLocations(Resource):
+    def get(self):
+        db_connect = database_pool.getconn()
+        try:
+            conn = db_connect.cursor()
+            conn.execute(db_statements.GET_REWARDS_AND_LOCATIONS_TABLE)
+            obj = {}
+            obj['data'] = [dict(zip(tuple([desc[0] for desc in conn.description]), i))
+                            for i in conn.fetchall()]
+            database_pool.putconn(db_connect)
+            return obj
+        except Error as e:
+            database_pool.putconn(db_connect)
+            abort(500)
+
+class AllRewardOrigins(Resource):
+    def get(self):
+        db_connect = database_pool.getconn()
+        try:
+            conn = db_connect.cursor()
+            conn.execute(db_statements.GET_REWARD_ORIGINS_TABLE)
+            obj = {}
+            obj['data'] = [dict(zip(tuple([desc[0] for desc in conn.description]), i))
+                            for i in conn.fetchall()]
+            database_pool.putconn(db_connect)
+            return obj
+        except Error as e:
+            database_pool.putconn(db_connect)
+            abort(500)
+
+class Time(Resource):
+    def get(self):
+        db_connect = database_pool.getconn()
+        try:
+            conn = db_connect.cursor()
+            conn.execute(db_statements.GET_TIMESTAMP)
+            obj = {}
+            obj['data'] = [dict(zip(tuple([desc[0] for desc in conn.description]), i))
+                            for i in conn.fetchall()]
+            database_pool.putconn(db_connect)
+            return obj
+        except Error as e:
+            database_pool.putconn(db_connect)
+            abort(500)
+
+api.add_resource(Rewards, '/api/v1/rewards')  # Route_1
+api.add_resource(Categories, '/api/v1/categories')
+api.add_resource(SingleCategory, '/api/v1/categories/<name>')
+api.add_resource(Programs, '/api/v1/programs')
+api.add_resource(SingleProgram, '/api/v1/programs/<name>')
+api.add_resource(Companies, '/api/v1/companies')
+api.add_resource(SingleCompany, '/api/v1/companies/<name>')
+api.add_resource(Cities, '/api/v1/cities')
+api.add_resource(SingleCity, '/api/v1/cities/<name>')
+api.add_resource(Locations, '/api/v1/locations')
+api.add_resource(SingleLocationRewards, '/api/v1/locations/<lat>/<lon>')
+api.add_resource(Coordinates, '/api/v1/coordinates/<lat>/<lon>')
+api.add_resource(AllRewards, '/api/v2/rewards')
+api.add_resource(AllLocations, '/api/v2/locations')
+api.add_resource(AllRewardsAndLocations, '/api/v2/rewardslocations')
+api.add_resource(AllRewardOrigins, '/api/v2/rewardorigins')
+api.add_resource(Time, '/api/v2/timestamp')
 
 if __name__ == "__main__":
     application.debug = True

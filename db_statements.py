@@ -8,8 +8,8 @@ GET_ALL_REWARDS_WITH_LOCATIONS = f"SELECT {rewards_data} FROM rewards,rewards_an
 GET_ALL_REWARDS_WITH_LOCATIONS_FILTERED = f"SELECT {rewards_data} FROM rewards,rewards_and_locations where id=reward_id AND reward_origin IN ("+"{}) ORDER BY LOWER(company_name)"
 GET_ALL_REWARDS_BY_PROGRAM = f"SELECT {rewards_data} FROM rewards where reward_origin = '"+"{}' ORDER BY LOWER(company_name)"
 GET_ALL_REWARDS_BY_COMPANY_NAME = f"SELECT {rewards_data} FROM rewards where company_name LIKE '"+"{}%' ORDER BY LOWER(company_name)"
-GET_ALL_REWARDS_BY_COMPANY_NAME_FILTERED = f"SELECT {rewards_data} FROM rewards where company_name LIKE '"+"{}%' AND reward_origin IN ({}) ORDER BY LOWER(company_name) ORDER BY LOWER(company_name)"
-GET_ALL_REWARDS_BY_CATEGORY = f"SELECT {rewards_data} FROM rewards where offer_type LIKE '%"+"{}%' ORDER BY LOWER(company_name) ORDER BY LOWER(company_name)"
+GET_ALL_REWARDS_BY_COMPANY_NAME_FILTERED = f"SELECT {rewards_data} FROM rewards where company_name LIKE '"+"{}%' AND reward_origin IN ({}) ORDER BY LOWER(company_name)"
+GET_ALL_REWARDS_BY_CATEGORY = f"SELECT {rewards_data} FROM rewards where offer_type LIKE '%"+"{}%' ORDER BY LOWER(company_name)"
 GET_ALL_REWARDS_BY_CATEGORY_FILTERED = f"SELECT {rewards_data} FROM rewards where offer_type LIKE '%"+"{}%' AND reward_origin IN ({}) ORDER BY LOWER(company_name)"
 GET_ALL_REWARDS_BY_LOCATION = f"SELECT {rewards_data} FROM locations,rewards_and_locations,rewards WHERE locations.id = location_id AND rewards.id = reward_id AND lat::numeric ="+"{} AND lon::numeric ={} ORDER BY LOWER(company_name)"
 GET_ALL_REWARDS_BY_LOCATION_FILTERED = f"SELECT {rewards_data} FROM locations,rewards_and_locations,rewards WHERE locations.id = location_id AND rewards.id = reward_id AND lat::numeric ="+"{} AND lon::numeric ={} AND reward_origin IN ({}) ORDER BY LOWER(company_name)"
@@ -50,3 +50,9 @@ GET_UNIQUE_LOCATIONS_COORDINATES = "SELECT id, lat,lon FROM locations,rewards_an
 GET_UNIQUE_LOCATIONS_COORDINATES_FILTERED = "SELECT locations.id, lat,lon FROM locations,rewards_and_locations,rewards WHERE locations.id=location_id AND rewards.id=reward_id AND reward_origin IN ({}) GROUP BY locations.id,lat,lon"
 
 GET_LOCATION_BY_LOCATION_ID = "SELECT formatted_address,city,id,lat,lon FROM locations WHERE id = '{}'"
+
+GET_REWARDS_TABLE = "SELECT * FROM rewards"
+GET_LOCATIONS_TABLE = "SELECT * FROM locations"
+GET_REWARDS_AND_LOCATIONS_TABLE = "SELECT * FROM rewards_and_locations"
+GET_REWARD_ORIGINS_TABLE = "SELECT * FROM reward_origins"
+GET_TIMESTAMP = "SELECT * FROM timestamp"
