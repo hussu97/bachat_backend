@@ -1,6 +1,6 @@
 
 rewards_data = 'rewards.id as id,reward_origin,reward_origin_logo,background_image,logo,offer,offer_description,offer_type,company_name,cost,terms_and_conditions,expiry_date,link,contact,rating,cuisine,working_hours,website'
-
+programs_data = 'description, reward_origin_link, app_store_link, play_store_link'
 
 GET_ALL_REWARDS = f"SELECT {rewards_data} FROM rewards ORDER BY LOWER(company_name)"
 GET_ALL_REWARDS_FILTERED = f"SELECT {rewards_data} FROM rewards WHERE reward_origin IN ("+"{}) ORDER BY LOWER(company_name)"
@@ -28,8 +28,8 @@ COUNT_REWARDS_BY_CATEGORY_FILTERED = "SELECT COUNT(*) FROM rewards where offer_t
 COUNT_REWARDS_BY_LOCATION = "SELECT COUNT(*) FROM locations,rewards_and_locations,rewards WHERE locations.id = location_id AND rewards.id = reward_id AND lat::numeric ={} AND lon::numeric ={}"
 COUNT_REWARDS_BY_LOCATION_FILTERED = "SELECT COUNT(*) FROM locations,rewards_and_locations,rewards WHERE locations.id = location_id AND rewards.id = reward_id AND lat::numeric ={} AND lon::numeric ={} AND reward_origin IN ({})"
 
-GET_ALL_PROGRAMS = "SELECT COUNT(reward_origin) AS count, reward_origin,reward_origin_logo FROM rewards GROUP BY reward_origin,reward_origin_logo ORDER BY reward_origin"
-GET_ALL_PROGRAMS_FILTERED = "SELECT COUNT(reward_origin) AS count, reward_origin,reward_origin_logo FROM rewards WHERE reward_origin in ({}) GROUP BY reward_origin,reward_origin_logo ORDER BY reward_origin"
+GET_ALL_PROGRAMS = f"SELECT COUNT(reward_origin) AS count, reward_origin,reward_origin_logo,{programs_data} FROM rewards left join reward_origins on reward_origin=name GROUP BY reward_origin,reward_origin_logo,{programs_data} ORDER BY reward_origin"
+GET_ALL_PROGRAMS_FILTERED = f"SELECT COUNT(reward_origin) AS count, reward_origin,reward_origin_logo,{programs_data} FROM rewards left join reward_origins on reward_origin=name WHERE reward_origin in ("+"{})"+f" GROUP BY reward_origin,reward_origin_logo,{programs_data} ORDER BY reward_origin"
 GET_ALL_COMPANIES = "SELECT DISTINCT company_name from rewards ORDER BY company_name"
 GET_ALL_COMPANIES_FILTERED = "SELECT DISTINCT company_name from rewards WHERE reward_origin IN ({}) ORDER BY company_name"
 GET_ALL_CATEGORIES = "SELECT COUNT(offer_type) AS count, offer_type FROM rewards GROUP BY offer_type ORDER BY offer_type"
