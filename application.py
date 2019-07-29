@@ -371,7 +371,7 @@ class SingleCity(Resource):
                 res = jsonify(get_paginated_list(
                     conn,
                     rowCount,
-                    '/companies/{}?'.format(name),
+                    '/cities/{}?'.format(name),
                     start=request.args.get('start', 1),
                     limit=request.args.get('limit', 20),
                     sql=db_statements.GET_ALL_REWARDS_BY_CITY.format(
@@ -387,7 +387,7 @@ class SingleCity(Resource):
                 res = jsonify(get_paginated_list(
                     conn,
                     rowCount,
-                    '/companies/{}?program={}&'.format(name, program_name),
+                    '/cities/{}?program={}&'.format(name, program_name),
                     start=request.args.get('start', 1),
                     limit=request.args.get('limit', 20),
                     sql=db_statements.GET_ALL_REWARDS_BY_CITY_FILTERED.format(
