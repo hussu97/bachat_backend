@@ -1,18 +1,31 @@
 from flask import Flask, request, jsonify, abort
 from flask_restful import Resource, Api
 import psycopg2
-from psycopg2 import pool,Error, DatabaseError
+from psycopg2 import pool, Error, DatabaseError
 from haversine import measureDistanceBetweenCoordinates as mDBC
 import db_statements as db_statements
-import config_dev as cfg
+try:
+    import config_dev as cfg
+except ImportError:
+    import os
+    cfg.pg = {
+        'database': os.environ['RDS_DB_NAME'],
+        'user': os.environ['RDS_USERNAME'],
+        'password': os.environ['RDS_PASSWORD'],
+        'host': os.environ['RDS_HOSTNAME'],
+        'port': os.environ['RDS_PORT'],
+        'minPool': os.environ['MIN_POOL'],
+        'maxPool': os.environ['MAX_POOL']
+    }
+
 try:
     database_pool = psycopg2.pool.ThreadedConnectionPool(
         cfg.pg['minPool'],
         cfg.pg['maxPool'],
-        user=cfg.pg['user'], 
+        user=cfg.pg['user'],
         password=cfg.pg['password'],
-        host=cfg.pg['host'], 
-        port=cfg.pg['port'], 
+        host=cfg.pg['host'],
+        port=cfg.pg['port'],
         database=cfg.pg['database']
     )
 except DatabaseError as e:
@@ -61,7 +74,8 @@ def get_paginated_list(conn, numResults, url, start, limit, sql):
             db_statements.GET_ALL_REWARD_LOCATIONS.format(dat['id']))
         dat['locations'] = []
         for q in conn.fetchall():
-            dat['locations'] += [dict(zip(tuple([desc[0] for desc in conn.description]), q))]
+            dat['locations'] += [dict(zip(tuple([desc[0]
+                                                 for desc in conn.description]), q))]
     conn.close()
     return obj
 
@@ -114,8 +128,9 @@ class Rewards(Resource):
                 database_pool.putconn(db_connect)
                 return res
             else:
-                
-                program_names = get_sql_safe_program_list(program_name.split(','))
+
+                program_names = get_sql_safe_program_list(
+                    program_name.split(','))
                 conn.execute(
                     db_statements.COUNT_REWARDS_FILTERED.format(program_names))
                 rowCount = conn.fetchone()[0]
@@ -144,17 +159,18 @@ class Categories(Resource):
             if program_name is None or program_name == '':
                 conn.execute(db_statements.GET_ALL_CATEGORIES)
                 obj = fix_categories_list([dict(zip(tuple([desc[0] for desc in conn.description]), i))
-                                        for i in conn.fetchall()])
+                                           for i in conn.fetchall()])
                 conn.close()
                 database_pool.putconn(db_connect)
                 return obj
             else:
-                program_names = get_sql_safe_program_list(program_name.split(','))
+                program_names = get_sql_safe_program_list(
+                    program_name.split(','))
                 conn.execute(
                     db_statements.GET_ALL_CATEGORIES_FILTERED.format(program_names))
                 obj = {}
                 obj['data'] = [dict(zip(tuple([desc[0] for desc in conn.description]), i))
-                            for i in conn.fetchall()]
+                               for i in conn.fetchall()]
                 conn.close()
                 database_pool.putconn(db_connect)
                 return obj
@@ -185,7 +201,8 @@ class SingleCategory(Resource):
                 database_pool.putconn(db_connect)
                 return res
             else:
-                program_names = get_sql_safe_program_list(program_name.split(','))
+                program_names = get_sql_safe_program_list(
+                    program_name.split(','))
                 conn.execute(
                     db_statements.COUNT_REWARDS_BY_CATEGORY_FILTERED.format(name, program_names))
                 rowCount = conn.fetchone()[0]
@@ -215,17 +232,18 @@ class Programs(Resource):
                 conn.execute(db_statements.GET_ALL_PROGRAMS)
                 obj = {}
                 obj['data'] = [dict(zip(tuple([desc[0] for desc in conn.description]), i))
-                            for i in conn.fetchall()]
+                               for i in conn.fetchall()]
                 conn.close()
                 database_pool.putconn(db_connect)
                 return obj
             else:
-                program_names = get_sql_safe_program_list(program_name.split(','))
+                program_names = get_sql_safe_program_list(
+                    program_name.split(','))
                 conn.execute(
                     db_statements.GET_ALL_PROGRAMS_FILTERED.format(program_names))
                 obj = {}
                 obj['data'] = [dict(zip(tuple([desc[0] for desc in conn.description]), i))
-                            for i in conn.fetchall()]
+                               for i in conn.fetchall()]
                 conn.close()
                 database_pool.putconn(db_connect)
                 return obj
@@ -272,7 +290,8 @@ class Companies(Resource):
                 database_pool.putconn(db_connect)
                 return obj
             else:
-                program_names = get_sql_safe_program_list(program_name.split(','))
+                program_names = get_sql_safe_program_list(
+                    program_name.split(','))
                 conn.execute(
                     db_statements.GET_ALL_COMPANIES_FILTERED.format(program_names))
                 obj = {}
@@ -309,7 +328,8 @@ class SingleCompany(Resource):
                 database_pool.putconn(db_connect)
                 return res
             else:
-                program_names = get_sql_safe_program_list(program_name.split(','))
+                program_names = get_sql_safe_program_list(
+                    program_name.split(','))
                 conn.execute(
                     db_statements.COUNT_REWARDS_BY_COMPANY_NAME_FILTERED.format(name, program_names))
                 rowCount = conn.fetchone()[0]
@@ -339,17 +359,18 @@ class Cities(Resource):
                 conn.execute(db_statements.GET_ALL_CITIES)
                 obj = {}
                 obj['data'] = [dict(zip(tuple([desc[0] for desc in conn.description]), i))
-                            for i in conn.fetchall()]
+                               for i in conn.fetchall()]
                 conn.close()
                 database_pool.putconn(db_connect)
                 return obj
             else:
-                program_names = get_sql_safe_program_list(program_name.split(','))
+                program_names = get_sql_safe_program_list(
+                    program_name.split(','))
                 conn.execute(
                     db_statements.GET_ALL_CITIES_FILTERED.format(program_names))
                 obj = {}
                 obj['data'] = [dict(zip(tuple([desc[0] for desc in conn.description]), i))
-                            for i in conn.fetchall()]
+                               for i in conn.fetchall()]
                 conn.close()
                 database_pool.putconn(db_connect)
                 return obj
@@ -380,7 +401,8 @@ class SingleCity(Resource):
                 database_pool.putconn(db_connect)
                 return res
             else:
-                program_names = get_sql_safe_program_list(program_name.split(','))
+                program_names = get_sql_safe_program_list(
+                    program_name.split(','))
                 conn.execute(
                     db_statements.COUNT_REWARDS_BY_CITY_FILTERED.format(name, program_names))
                 rowCount = conn.fetchone()[0]
@@ -415,7 +437,7 @@ class Locations(Resource):
                         db_statements.COUNT_REWARDS_BY_LOCATION_REGION.format(lat1, lat2, lon1, lon2))
                     obj = {}
                     obj['data'] = [dict(zip(tuple([desc[0] for desc in conn.description]), i))
-                                for i in conn.fetchall()]
+                                   for i in conn.fetchall()]
                     return obj
                 else:
                     program_names = get_sql_safe_program_list(
@@ -424,7 +446,7 @@ class Locations(Resource):
                         lat1, lat2, lon1, lon2, program_names))
                     obj = {}
                     obj['data'] = [dict(zip(tuple([desc[0] for desc in conn.description]), i))
-                                for i in conn.fetchall()]
+                                   for i in conn.fetchall()]
                     return obj
             else:
                 abort(500)
@@ -457,14 +479,16 @@ class SingleLocationRewards(Resource):
                 database_pool.putconn(db_connect)
                 return res
             else:
-                program_names = get_sql_safe_program_list(program_name.split(','))
+                program_names = get_sql_safe_program_list(
+                    program_name.split(','))
                 conn.execute(
                     db_statements.COUNT_REWARDS_BY_LOCATION_FILTERED.format(lat, lon, program_names))
                 rowCount = conn.fetchone()[0]
                 res = jsonify(get_paginated_list(
                     conn,
                     rowCount,
-                    '/locations/{}/{}?program={}&'.format(lat, lon, program_name),
+                    '/locations/{}/{}?program={}&'.format(
+                        lat, lon, program_name),
                     start=request.args.get('start', 1),
                     limit=request.args.get('limit', 20),
                     sql=db_statements.GET_ALL_REWARDS_BY_LOCATION_FILTERED.format(
@@ -500,7 +524,7 @@ class Coordinates(Resource):
                     limit=request.args.get('limit', 10),
                 )
                 list_sliced = list_sorted[obj['start'] -
-                                        1:obj['start']+obj['limit']-1]
+                                          1:obj['start']+obj['limit']-1]
                 obj['data'] = []
                 for locid, dist in list_sliced:
                     conn.execute(
@@ -512,13 +536,15 @@ class Coordinates(Resource):
                         db_statements.GET_ALL_REWARD_LOCATIONS.format(dat['id']))
                     dat['locations'] = []
                     for q in conn.fetchall():
-                        dat['locations'] += [dict(zip(tuple([desc[0] for desc in conn.description]), q))]
+                        dat['locations'] += [dict(zip(tuple([desc[0]
+                                                             for desc in conn.description]), q))]
                 conn.close()
                 database_pool.putconn(db_connect)
                 return obj
             else:
                 tempDict = {}
-                program_names = get_sql_safe_program_list(program_name.split(','))
+                program_names = get_sql_safe_program_list(
+                    program_name.split(','))
                 conn.execute(
                     db_statements.GET_UNIQUE_LOCATIONS_COORDINATES_FILTERED.format(program_names))
                 for locid, lat2, lon2 in conn.fetchall():
@@ -532,19 +558,19 @@ class Coordinates(Resource):
                     limit=request.args.get('limit', 5),
                 )
                 list_sliced = list_sorted[obj['start'] -
-                                        1:obj['start']+obj['limit']-1]
+                                          1:obj['start']+obj['limit']-1]
                 obj['data'] = []
                 for locid, dist in list_sliced:
                     conn.execute(
                         db_statements.GET_ALL_REWARDS_BY_LOCATION_ID_FILTERED.format(locid, program_names))
                     li = [dict(zip(tuple([desc[0] for desc in conn.description]+['dist', ]), i+(dist,)))
-                        for i in conn.fetchall()]
+                          for i in conn.fetchall()]
                     for dat in li:
                         conn.execute(
                             db_statements.GET_LOCATION_BY_LOCATION_ID.format(locid))
                         dat['locations'] = []
                         dat['locations'] += [dict(zip(tuple([desc[0] for desc in conn.description]), x))
-                                            for x in conn.fetchall()]
+                                             for x in conn.fetchall()]
                     obj['data'] += li
                 conn.close()
                 database_pool.putconn(db_connect)
@@ -552,6 +578,7 @@ class Coordinates(Resource):
         except Error as e:
             database_pool.putconn(db_connect)
             abort(500)
+
 
 class AllRewards(Resource):
     def get(self):
@@ -561,12 +588,13 @@ class AllRewards(Resource):
             conn.execute(db_statements.GET_REWARDS_TABLE)
             obj = {}
             obj['data'] = [dict(zip(tuple([desc[0] for desc in conn.description]), i))
-                            for i in conn.fetchall()]
+                           for i in conn.fetchall()]
             database_pool.putconn(db_connect)
             return obj
         except Error as e:
             database_pool.putconn(db_connect)
             abort(500)
+
 
 class AllLocations(Resource):
     def get(self):
@@ -576,12 +604,13 @@ class AllLocations(Resource):
             conn.execute(db_statements.GET_LOCATIONS_TABLE)
             obj = {}
             obj['data'] = [dict(zip(tuple([desc[0] for desc in conn.description]), i))
-                            for i in conn.fetchall()]
+                           for i in conn.fetchall()]
             database_pool.putconn(db_connect)
             return obj
         except Error as e:
             database_pool.putconn(db_connect)
             abort(500)
+
 
 class AllRewardsAndLocations(Resource):
     def get(self):
@@ -591,12 +620,13 @@ class AllRewardsAndLocations(Resource):
             conn.execute(db_statements.GET_REWARDS_AND_LOCATIONS_TABLE)
             obj = {}
             obj['data'] = [dict(zip(tuple([desc[0] for desc in conn.description]), i))
-                            for i in conn.fetchall()]
+                           for i in conn.fetchall()]
             database_pool.putconn(db_connect)
             return obj
         except Error as e:
             database_pool.putconn(db_connect)
             abort(500)
+
 
 class AllRewardOrigins(Resource):
     def get(self):
@@ -606,12 +636,13 @@ class AllRewardOrigins(Resource):
             conn.execute(db_statements.GET_REWARD_ORIGINS_TABLE)
             obj = {}
             obj['data'] = [dict(zip(tuple([desc[0] for desc in conn.description]), i))
-                            for i in conn.fetchall()]
+                           for i in conn.fetchall()]
             database_pool.putconn(db_connect)
             return obj
         except Error as e:
             database_pool.putconn(db_connect)
             abort(500)
+
 
 class Time(Resource):
     def get(self):
@@ -621,12 +652,13 @@ class Time(Resource):
             conn.execute(db_statements.GET_TIMESTAMP)
             obj = {}
             obj['data'] = [dict(zip(tuple([desc[0] for desc in conn.description]), i))
-                            for i in conn.fetchall()]
+                           for i in conn.fetchall()]
             database_pool.putconn(db_connect)
             return obj
         except Error as e:
             database_pool.putconn(db_connect)
             abort(500)
+
 
 api.add_resource(Rewards, '/api/v1/rewards')  # Route_1
 api.add_resource(Categories, '/api/v1/categories')
