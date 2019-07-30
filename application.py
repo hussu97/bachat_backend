@@ -8,6 +8,10 @@ try:
     import config_dev as cfg
 except ImportError:
     import os
+
+    class db_module:
+        pass
+    cfg = db_module()
     cfg.pg = {
         'database': os.environ['RDS_DB_NAME'],
         'user': os.environ['RDS_USERNAME'],
