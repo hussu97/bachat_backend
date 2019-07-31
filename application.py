@@ -6,7 +6,7 @@ from haversine import measureDistanceBetweenCoordinates as mDBC
 import db_statements as db_statements
 try:
     import config_dev as cfg
-    number_of_connections_active = cfg.pg['maxPool']
+    number_of_connections = int(cfg.pg['maxPool'])
 except ImportError:
     import os
 
@@ -19,10 +19,10 @@ except ImportError:
         'password': os.environ['RDS_PASSWORD'],
         'host': os.environ['RDS_HOSTNAME'],
         'port': os.environ['RDS_PORT'],
-        'minPool': os.environ['MIN_POOL'],
-        'maxPool': os.environ['MAX_POOL']
+        'minPool': int(os.environ['MIN_POOL']),
+        'maxPool': int(os.environ['MAX_POOL'])
     }
-    number_of_connections_active = os.environ['MAX_POOL']
+    number_of_connections = int(os.environ['MAX_POOL'])
 
 try:
     database_pool = psycopg2.pool.ThreadedConnectionPool(
@@ -39,10 +39,9 @@ except DatabaseError as e:
 
 application = Flask(__name__)
 api = Api(application)
-print(number_of_connections_active)
+print(number_of_connections)
 
 def getPaginatedLinks(start, limit, numResults, url):
-    global number_of_connections_active, database_pool 
     start = int(start)
     limit = int(limit)
     count = numResults
@@ -71,7 +70,6 @@ def getPaginatedLinks(start, limit, numResults, url):
 
 
 def get_paginated_list(conn, numResults, url, start, limit, sql, order=False):
-    global number_of_connections_active, database_pool 
     obj = getPaginatedLinks(start, limit, numResults, url)
     # finally extract result according to bounds
     conn.execute(sql)
@@ -114,7 +112,7 @@ def fix_categories_list(json):
 
 
 def get_sql_safe_program_list(programs):
-    global number_of_connections_active, database_pool 
+    global number_of_connections, database_pool 
     param = ''
     for idx, i in enumerate(programs):
         param += "'{}'".format(i)
@@ -125,12 +123,12 @@ def get_sql_safe_program_list(programs):
 
 class Rewards(Resource):
     def get(self):
-        global number_of_connections_active, database_pool 
+        global number_of_connections, database_pool 
         program_name = request.args.get('program')
         db_connect = database_pool.getconn()
-        print(number_of_connections_active)
-        number_of_connections_active -= 1
-        print(f'number of active connections: {number_of_connections_active}')
+        print(number_of_connections)
+        number_of_connections +=  1
+        print(f'number of active connections: {number_of_connections}')
         conn = db_connect.cursor()
         try:
             if program_name is None or program_name == '':
@@ -145,8 +143,8 @@ class Rewards(Resource):
                     sql=db_statements.GET_ALL_REWARDS
                 ))
                 database_pool.putconn(db_connect)
-                number_of_connections_active += 1
-                print(f'number of active connections: {number_of_connections_active}')
+                number_of_connections -= 1
+                print(f'number of active connections: {number_of_connections}')
                 return res
             else:
 
@@ -165,24 +163,24 @@ class Rewards(Resource):
                         program_names)
                 ))
                 database_pool.putconn(db_connect)
-                number_of_connections_active += 1
-                print(f'number of active connections: {number_of_connections_active}')
+                number_of_connections -= 1
+                print(f'number of active connections: {number_of_connections}')
                 return res
         except Error as e:
             conn.close()
             database_pool.putconn(db_connect)
-            number_of_connections_active += 1
-            print(f'number of active connections: {number_of_connections_active}')
+            number_of_connections -= 1
+            print(f'number of active connections: {number_of_connections}')
             abort(500)
 
 
 class Categories(Resource):
     def get(self):
-        global number_of_connections_active, database_pool 
+        global number_of_connections, database_pool 
         program_name = request.args.get('program')
         db_connect = database_pool.getconn()
-        number_of_connections_active -= 1
-        print(f'number of active connections: {number_of_connections_active}')
+        number_of_connections +=  1
+        print(f'number of active connections: {number_of_connections}')
         conn = db_connect.cursor()
         try:
             if program_name is None or program_name == '':
@@ -191,8 +189,8 @@ class Categories(Resource):
                                            for i in conn.fetchall()])
                 conn.close()
                 database_pool.putconn(db_connect)
-                number_of_connections_active += 1
-                print(f'number of active connections: {number_of_connections_active}')
+                number_of_connections -= 1
+                print(f'number of active connections: {number_of_connections}')
                 return obj
             else:
                 program_names = get_sql_safe_program_list(
@@ -204,24 +202,24 @@ class Categories(Resource):
                                for i in conn.fetchall()]
                 conn.close()
                 database_pool.putconn(db_connect)
-                number_of_connections_active += 1
-                print(f'number of active connections: {number_of_connections_active}')
+                number_of_connections -= 1
+                print(f'number of active connections: {number_of_connections}')
                 return obj
         except Error as e:
             conn.close()
             database_pool.putconn(db_connect)
-            number_of_connections_active += 1
-            print(f'number of active connections: {number_of_connections_active}')
+            number_of_connections -= 1
+            print(f'number of active connections: {number_of_connections}')
             abort(500)
 
 
 class SingleCategory(Resource):
     def get(self, name):
-        global number_of_connections_active, database_pool 
+        global number_of_connections, database_pool 
         program_name = request.args.get('program')
         db_connect = database_pool.getconn()
-        number_of_connections_active -= 1
-        print(f'number of active connections: {number_of_connections_active}')
+        number_of_connections +=  1
+        print(f'number of active connections: {number_of_connections}')
         conn = db_connect.cursor()
         try:
             if program_name is None or program_name == '':
@@ -238,8 +236,8 @@ class SingleCategory(Resource):
                         name)
                 ))
                 database_pool.putconn(db_connect)
-                number_of_connections_active += 1
-                print(f'number of active connections: {number_of_connections_active}')
+                number_of_connections -= 1
+                print(f'number of active connections: {number_of_connections}')
                 return res
             else:
                 program_names = get_sql_safe_program_list(
@@ -257,24 +255,24 @@ class SingleCategory(Resource):
                         name, program_names)
                 ))
                 database_pool.putconn(db_connect)
-                number_of_connections_active += 1
-                print(f'number of active connections: {number_of_connections_active}')
+                number_of_connections -= 1
+                print(f'number of active connections: {number_of_connections}')
                 return res
         except Error as e:
             conn.close()
             database_pool.putconn(db_connect)
-            number_of_connections_active += 1
-            print(f'number of active connections: {number_of_connections_active}')
+            number_of_connections -= 1
+            print(f'number of active connections: {number_of_connections}')
             abort(500)
 
 
 class Programs(Resource):
     def get(self):
-        global number_of_connections_active, database_pool 
+        global number_of_connections, database_pool 
         program_name = request.args.get('program')
         db_connect = database_pool.getconn()
-        number_of_connections_active -= 1
-        print(f'number of active connections: {number_of_connections_active}')
+        number_of_connections +=  1
+        print(f'number of active connections: {number_of_connections}')
         conn = db_connect.cursor()
         try:
             if program_name is None or program_name == '':
@@ -284,8 +282,8 @@ class Programs(Resource):
                                for i in conn.fetchall()]
                 conn.close()
                 database_pool.putconn(db_connect)
-                number_of_connections_active += 1
-                print(f'number of active connections: {number_of_connections_active}')
+                number_of_connections -= 1
+                print(f'number of active connections: {number_of_connections}')
                 return obj
             else:
                 program_names = get_sql_safe_program_list(
@@ -297,23 +295,23 @@ class Programs(Resource):
                                for i in conn.fetchall()]
                 conn.close()
                 database_pool.putconn(db_connect)
-                number_of_connections_active += 1
-                print(f'number of active connections: {number_of_connections_active}')
+                number_of_connections -= 1
+                print(f'number of active connections: {number_of_connections}')
                 return obj
         except Error as e:
             conn.close()
             database_pool.putconn(db_connect)
-            number_of_connections_active += 1
-            print(f'number of active connections: {number_of_connections_active}')
+            number_of_connections -= 1
+            print(f'number of active connections: {number_of_connections}')
             abort(500)
 
 
 class SingleProgram(Resource):
     def get(self, name):
-        global number_of_connections_active, database_pool 
+        global number_of_connections, database_pool 
         db_connect = database_pool.getconn()
-        number_of_connections_active -= 1
-        print(f'number of active connections: {number_of_connections_active}')
+        number_of_connections +=  1
+        print(f'number of active connections: {number_of_connections}')
         conn = db_connect.cursor()
         try:
             conn.execute(
@@ -329,24 +327,24 @@ class SingleProgram(Resource):
                     name)
             ))
             database_pool.putconn(db_connect)
-            number_of_connections_active += 1
-            print(f'number of active connections: {number_of_connections_active}')
+            number_of_connections -= 1
+            print(f'number of active connections: {number_of_connections}')
             return res
         except Error as e:
             conn.close()
             database_pool.putconn(db_connect)
-            number_of_connections_active += 1
-            print(f'number of active connections: {number_of_connections_active}')
+            number_of_connections -= 1
+            print(f'number of active connections: {number_of_connections}')
             abort(500)
 
 
 class Companies(Resource):
     def get(self):
-        global number_of_connections_active, database_pool 
+        global number_of_connections, database_pool 
         program_name = request.args.get('program')
         db_connect = database_pool.getconn()
-        number_of_connections_active -= 1
-        print(f'number of active connections: {number_of_connections_active}')
+        number_of_connections +=  1
+        print(f'number of active connections: {number_of_connections}')
         conn = db_connect.cursor()
         try:
             if program_name is None or program_name == '':
@@ -355,8 +353,8 @@ class Companies(Resource):
                 obj['data'] = [i[0] for i in conn.fetchall()]
                 conn.close()
                 database_pool.putconn(db_connect)
-                number_of_connections_active += 1
-                print(f'number of active connections: {number_of_connections_active}')
+                number_of_connections -= 1
+                print(f'number of active connections: {number_of_connections}')
                 return obj
             else:
                 program_names = get_sql_safe_program_list(
@@ -367,26 +365,26 @@ class Companies(Resource):
                 obj['data'] = [i[0] for i in conn.fetchall()]
                 conn.close()
                 database_pool.putconn(db_connect)
-                number_of_connections_active += 1
-                print(f'number of active connections: {number_of_connections_active}')
+                number_of_connections -= 1
+                print(f'number of active connections: {number_of_connections}')
                 return obj
         except Error as e:
             conn.close()
             database_pool.putconn(db_connect)
-            number_of_connections_active += 1
-            print(f'number of active connections: {number_of_connections_active}')
+            number_of_connections -= 1
+            print(f'number of active connections: {number_of_connections}')
             abort(500)
 
 
 class SingleCompany(Resource):
     def get(self, name):
-        global number_of_connections_active, database_pool 
+        global number_of_connections, database_pool 
         program_name = request.args.get('program')
         # Replace pen's with pen''s for proper sql search
         name = name.replace("'", "''")
         db_connect = database_pool.getconn()
-        number_of_connections_active -= 1
-        print(f'number of active connections: {number_of_connections_active}')
+        number_of_connections +=  1
+        print(f'number of active connections: {number_of_connections}')
         conn = db_connect.cursor()
         try:
             if program_name is None or program_name == '':
@@ -403,8 +401,8 @@ class SingleCompany(Resource):
                         name)
                 ))
                 database_pool.putconn(db_connect)
-                number_of_connections_active += 1
-                print(f'number of active connections: {number_of_connections_active}')
+                number_of_connections -= 1
+                print(f'number of active connections: {number_of_connections}')
                 return res
             else:
                 program_names = get_sql_safe_program_list(
@@ -422,24 +420,24 @@ class SingleCompany(Resource):
                         name, program_names)
                 ))
                 database_pool.putconn(db_connect)
-                number_of_connections_active += 1
-                print(f'number of active connections: {number_of_connections_active}')
+                number_of_connections -= 1
+                print(f'number of active connections: {number_of_connections}')
                 return res
         except Error as e:
             conn.close()
             database_pool.putconn(db_connect)
-            number_of_connections_active += 1
-            print(f'number of active connections: {number_of_connections_active}')
+            number_of_connections -= 1
+            print(f'number of active connections: {number_of_connections}')
             abort(500)
 
 
 class Cities(Resource):
     def get(self):
-        global number_of_connections_active, database_pool 
+        global number_of_connections, database_pool 
         program_name = request.args.get('program')
         db_connect = database_pool.getconn()
-        number_of_connections_active -= 1
-        print(f'number of active connections: {number_of_connections_active}')
+        number_of_connections +=  1
+        print(f'number of active connections: {number_of_connections}')
         conn = db_connect.cursor()
         try:
             if program_name is None or program_name == '':
@@ -449,8 +447,8 @@ class Cities(Resource):
                                for i in conn.fetchall()]
                 conn.close()
                 database_pool.putconn(db_connect)
-                number_of_connections_active += 1
-                print(f'number of active connections: {number_of_connections_active}')
+                number_of_connections -= 1
+                print(f'number of active connections: {number_of_connections}')
                 return obj
             else:
                 program_names = get_sql_safe_program_list(
@@ -462,24 +460,24 @@ class Cities(Resource):
                                for i in conn.fetchall()]
                 conn.close()
                 database_pool.putconn(db_connect)
-                number_of_connections_active += 1
-                print(f'number of active connections: {number_of_connections_active}')
+                number_of_connections -= 1
+                print(f'number of active connections: {number_of_connections}')
                 return obj
         except Error as e:
             conn.close()
             database_pool.putconn(db_connect)
-            number_of_connections_active += 1
-            print(f'number of active connections: {number_of_connections_active}')
+            number_of_connections -= 1
+            print(f'number of active connections: {number_of_connections}')
             abort(500)
 
 
 class SingleCity(Resource):
     def get(self, name):
-        global number_of_connections_active, database_pool 
+        global number_of_connections, database_pool 
         program_name = request.args.get('program')
         db_connect = database_pool.getconn()
-        number_of_connections_active -= 1
-        print(f'number of active connections: {number_of_connections_active}')
+        number_of_connections +=  1
+        print(f'number of active connections: {number_of_connections}')
         conn = db_connect.cursor()
         try:
             if program_name is None or program_name == '':
@@ -498,8 +496,8 @@ class SingleCity(Resource):
                     order=True
                 ))
                 database_pool.putconn(db_connect)
-                number_of_connections_active += 1
-                print(f'number of active connections: {number_of_connections_active}')
+                number_of_connections -= 1
+                print(f'number of active connections: {number_of_connections}')
                 return res
             else:
                 program_names = get_sql_safe_program_list(
@@ -519,27 +517,27 @@ class SingleCity(Resource):
                     order=True
                 ))
                 database_pool.putconn(db_connect)
-                number_of_connections_active += 1
-                print(f'number of active connections: {number_of_connections_active}')
+                number_of_connections -= 1
+                print(f'number of active connections: {number_of_connections}')
                 return res
         except Error as e:
             conn.close()
             database_pool.putconn(db_connect)
-            number_of_connections_active += 1
-            print(f'number of active connections: {number_of_connections_active}')
+            number_of_connections -= 1
+            print(f'number of active connections: {number_of_connections}')
             abort(500)
 
 
 class Locations(Resource):
     def get(self):
-        global number_of_connections_active, database_pool 
+        global number_of_connections, database_pool 
         program_name = request.args.get('program')
         lat1, lat2, lon1, lon2 = [
             float(i) for i in request.args.get('coordinates').split(',')]
         typeArg = request.args.get('type')
         db_connect = database_pool.getconn()
-        number_of_connections_active -= 1
-        print(f'number of active connections: {number_of_connections_active}')
+        number_of_connections +=  1
+        print(f'number of active connections: {number_of_connections}')
         conn = db_connect.cursor()
         try:
             if typeArg == 'marker':
@@ -564,20 +562,20 @@ class Locations(Resource):
         except Error as e:
             conn.close()
             database_pool.putconn(db_connect)
-            number_of_connections_active += 1
-            print(f'number of active connections: {number_of_connections_active}')
+            number_of_connections -= 1
+            print(f'number of active connections: {number_of_connections}')
             abort(500)
 
 
 class SingleLocationRewards(Resource):
     def get(self, lat, lon):
-        global number_of_connections_active, database_pool 
+        global number_of_connections, database_pool 
         program_name = request.args.get('program')
         lat = float(lat)
         lon = float(lon)
         db_connect = database_pool.getconn()
-        number_of_connections_active -= 1
-        print(f'number of active connections: {number_of_connections_active}')
+        number_of_connections +=  1
+        print(f'number of active connections: {number_of_connections}')
         conn = db_connect.cursor()
         try:
             if program_name is None or program_name == '':
@@ -594,8 +592,8 @@ class SingleLocationRewards(Resource):
                         lat, lon)
                 ))
                 database_pool.putconn(db_connect)
-                number_of_connections_active += 1
-                print(f'number of active connections: {number_of_connections_active}')
+                number_of_connections -= 1
+                print(f'number of active connections: {number_of_connections}')
                 return res
             else:
                 program_names = get_sql_safe_program_list(
@@ -614,24 +612,24 @@ class SingleLocationRewards(Resource):
                         lat, lon, program_names)
                 ))
                 database_pool.putconn(db_connect)
-                number_of_connections_active += 1
-                print(f'number of active connections: {number_of_connections_active}')
+                number_of_connections -= 1
+                print(f'number of active connections: {number_of_connections}')
                 return res
         except Error as e:
             conn.close()
             database_pool.putconn(db_connect)
-            number_of_connections_active += 1
-            print(f'number of active connections: {number_of_connections_active}')
+            number_of_connections -= 1
+            print(f'number of active connections: {number_of_connections}')
             abort(500)
 
 
 class Coordinates(Resource):
     def get(self, lat, lon):
-        global number_of_connections_active, database_pool 
+        global number_of_connections, database_pool 
         program_name = request.args.get('program')
         db_connect = database_pool.getconn()
-        number_of_connections_active -= 1
-        print(f'number of active connections: {number_of_connections_active}')
+        number_of_connections +=  1
+        print(f'number of active connections: {number_of_connections}')
         conn = db_connect.cursor()
         lat1 = float(lat)
         lon1 = float(lon)
@@ -667,8 +665,8 @@ class Coordinates(Resource):
                                                              for desc in conn.description]), q))]
                 conn.close()
                 database_pool.putconn(db_connect)
-                number_of_connections_active += 1
-                print(f'number of active connections: {number_of_connections_active}')
+                number_of_connections -= 1
+                print(f'number of active connections: {number_of_connections}')
                 return obj
             else:
                 tempDict = {}
@@ -703,23 +701,23 @@ class Coordinates(Resource):
                     obj['data'] += li
                 conn.close()
                 database_pool.putconn(db_connect)
-                number_of_connections_active += 1
-                print(f'number of active connections: {number_of_connections_active}')
+                number_of_connections -= 1
+                print(f'number of active connections: {number_of_connections}')
                 return obj
         except Error as e:
             conn.close()
             database_pool.putconn(db_connect)
-            number_of_connections_active += 1
-            print(f'number of active connections: {number_of_connections_active}')
+            number_of_connections -= 1
+            print(f'number of active connections: {number_of_connections}')
             abort(500)
 
 
 class AllRewards(Resource):
     def get(self):
-        global number_of_connections_active, database_pool 
+        global number_of_connections, database_pool 
         db_connect = database_pool.getconn()
-        number_of_connections_active -= 1
-        print(f'number of active connections: {number_of_connections_active}')
+        number_of_connections +=  1
+        print(f'number of active connections: {number_of_connections}')
         try:
             conn = db_connect.cursor()
             conn.execute(db_statements.GET_REWARDS_TABLE)
@@ -727,23 +725,23 @@ class AllRewards(Resource):
             obj['data'] = [dict(zip(tuple([desc[0] for desc in conn.description]), i))
                            for i in conn.fetchall()]
             database_pool.putconn(db_connect)
-            number_of_connections_active += 1
-            print(f'number of active connections: {number_of_connections_active}')
+            number_of_connections -= 1
+            print(f'number of active connections: {number_of_connections}')
             return obj
         except Error as e:
             conn.close()
             database_pool.putconn(db_connect)
-            number_of_connections_active += 1
-            print(f'number of active connections: {number_of_connections_active}')
+            number_of_connections -= 1
+            print(f'number of active connections: {number_of_connections}')
             abort(500)
 
 
 class AllLocations(Resource):
     def get(self):
-        global number_of_connections_active, database_pool 
+        global number_of_connections, database_pool 
         db_connect = database_pool.getconn()
-        number_of_connections_active -= 1
-        print(f'number of active connections: {number_of_connections_active}')
+        number_of_connections +=  1
+        print(f'number of active connections: {number_of_connections}')
         try:
             conn = db_connect.cursor()
             conn.execute(db_statements.GET_LOCATIONS_TABLE)
@@ -751,23 +749,23 @@ class AllLocations(Resource):
             obj['data'] = [dict(zip(tuple([desc[0] for desc in conn.description]), i))
                            for i in conn.fetchall()]
             database_pool.putconn(db_connect)
-            number_of_connections_active += 1
-            print(f'number of active connections: {number_of_connections_active}')
+            number_of_connections -= 1
+            print(f'number of active connections: {number_of_connections}')
             return obj
         except Error as e:
             conn.close()
             database_pool.putconn(db_connect)
-            number_of_connections_active += 1
-            print(f'number of active connections: {number_of_connections_active}')
+            number_of_connections -= 1
+            print(f'number of active connections: {number_of_connections}')
             abort(500)
 
 
 class AllRewardsAndLocations(Resource):
     def get(self):
-        global number_of_connections_active, database_pool 
+        global number_of_connections, database_pool 
         db_connect = database_pool.getconn()
-        number_of_connections_active -= 1
-        print(f'number of active connections: {number_of_connections_active}')
+        number_of_connections +=  1
+        print(f'number of active connections: {number_of_connections}')
         try:
             conn = db_connect.cursor()
             conn.execute(db_statements.GET_REWARDS_AND_LOCATIONS_TABLE)
@@ -775,23 +773,23 @@ class AllRewardsAndLocations(Resource):
             obj['data'] = [dict(zip(tuple([desc[0] for desc in conn.description]), i))
                            for i in conn.fetchall()]
             database_pool.putconn(db_connect)
-            number_of_connections_active += 1
-            print(f'number of active connections: {number_of_connections_active}')
+            number_of_connections -= 1
+            print(f'number of active connections: {number_of_connections}')
             return obj
         except Error as e:
             conn.close()
             database_pool.putconn(db_connect)
-            number_of_connections_active += 1
-            print(f'number of active connections: {number_of_connections_active}')
+            number_of_connections -= 1
+            print(f'number of active connections: {number_of_connections}')
             abort(500)
 
 
 class AllRewardOrigins(Resource):
     def get(self):
-        global number_of_connections_active, database_pool 
+        global number_of_connections, database_pool 
         db_connect = database_pool.getconn()
-        number_of_connections_active -= 1
-        print(f'number of active connections: {number_of_connections_active}')
+        number_of_connections +=  1
+        print(f'number of active connections: {number_of_connections}')
         try:
             conn = db_connect.cursor()
             conn.execute(db_statements.GET_REWARD_ORIGINS_TABLE)
@@ -799,23 +797,23 @@ class AllRewardOrigins(Resource):
             obj['data'] = [dict(zip(tuple([desc[0] for desc in conn.description]), i))
                            for i in conn.fetchall()]
             database_pool.putconn(db_connect)
-            number_of_connections_active += 1
-            print(f'number of active connections: {number_of_connections_active}')
+            number_of_connections -= 1
+            print(f'number of active connections: {number_of_connections}')
             return obj
         except Error as e:
             conn.close()
             database_pool.putconn(db_connect)
-            number_of_connections_active += 1
-            print(f'number of active connections: {number_of_connections_active}')
+            number_of_connections -= 1
+            print(f'number of active connections: {number_of_connections}')
             abort(500)
 
 
 class Time(Resource):
     def get(self):
-        global number_of_connections_active, database_pool 
+        global number_of_connections, database_pool 
         db_connect = database_pool.getconn()
-        number_of_connections_active -= 1
-        print(f'number of active connections: {number_of_connections_active}')
+        number_of_connections +=  1
+        print(f'number of active connections: {number_of_connections}')
         try:
             conn = db_connect.cursor()
             conn.execute(db_statements.GET_TIMESTAMP)
@@ -823,14 +821,14 @@ class Time(Resource):
             obj['data'] = [dict(zip(tuple([desc[0] for desc in conn.description]), i))
                            for i in conn.fetchall()]
             database_pool.putconn(db_connect)
-            number_of_connections_active += 1
-            print(f'number of active connections: {number_of_connections_active}')
+            number_of_connections -= 1
+            print(f'number of active connections: {number_of_connections}')
             return obj
         except Error as e:
             conn.close()
             database_pool.putconn(db_connect)
-            number_of_connections_active += 1
-            print(f'number of active connections: {number_of_connections_active}')
+            number_of_connections -= 1
+            print(f'number of active connections: {number_of_connections}')
             abort(500)
 
 
