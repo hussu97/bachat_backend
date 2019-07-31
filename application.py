@@ -6,7 +6,7 @@ from haversine import measureDistanceBetweenCoordinates as mDBC
 import db_statements as db_statements
 try:
     import config_dev as cfg
-    number_of_connections = int(cfg.pg['maxPool'])
+    number_of_connections = int(cfg.pg['minPool'])
 except ImportError:
     import os
 
@@ -22,7 +22,7 @@ except ImportError:
         'minPool': int(os.environ['MIN_POOL']),
         'maxPool': int(os.environ['MAX_POOL'])
     }
-    number_of_connections = int(os.environ['MAX_POOL'])
+    number_of_connections = int(os.environ['MIN_POOL'])
 
 try:
     database_pool = psycopg2.pool.ThreadedConnectionPool(
@@ -547,6 +547,8 @@ class Locations(Resource):
                     obj = {}
                     obj['data'] = [dict(zip(tuple([desc[0] for desc in conn.description]), i))
                                    for i in conn.fetchall()]
+                    conn.close()
+                    database_pool.putconn(db_connect)
                     return obj
                 else:
                     program_names = get_sql_safe_program_list(
@@ -556,6 +558,8 @@ class Locations(Resource):
                     obj = {}
                     obj['data'] = [dict(zip(tuple([desc[0] for desc in conn.description]), i))
                                    for i in conn.fetchall()]
+                    conn.close()
+                    database_pool.putconn(db_connect)
                     return obj
             else:
                 abort(500)
