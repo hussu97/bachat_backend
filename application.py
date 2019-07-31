@@ -71,7 +71,6 @@ def get_paginated_list(conn, numResults, url, start, limit, sql, order=False):
     obj = getPaginatedLinks(start, limit, numResults, url)
     # finally extract result according to bounds
     conn.execute(sql)
-    print(order)
     if order:
         data = [dict(zip(tuple([desc[0] for desc in conn.description]), i))
                 for i in conn.fetchall()]
@@ -157,6 +156,7 @@ class Rewards(Resource):
                 database_pool.putconn(db_connect)
                 return res
         except Error as e:
+            conn.close()
             database_pool.putconn(db_connect)
             abort(500)
 
@@ -186,6 +186,7 @@ class Categories(Resource):
                 database_pool.putconn(db_connect)
                 return obj
         except Error as e:
+            conn.close()
             database_pool.putconn(db_connect)
             abort(500)
 
@@ -229,6 +230,7 @@ class SingleCategory(Resource):
                 database_pool.putconn(db_connect)
                 return res
         except Error as e:
+            conn.close()
             database_pool.putconn(db_connect)
             abort(500)
 
@@ -259,6 +261,7 @@ class Programs(Resource):
                 database_pool.putconn(db_connect)
                 return obj
         except Error as e:
+            conn.close()
             database_pool.putconn(db_connect)
             abort(500)
 
@@ -283,6 +286,7 @@ class SingleProgram(Resource):
             database_pool.putconn(db_connect)
             return res
         except Error as e:
+            conn.close()
             database_pool.putconn(db_connect)
             abort(500)
 
@@ -311,6 +315,7 @@ class Companies(Resource):
                 database_pool.putconn(db_connect)
                 return obj
         except Error as e:
+            conn.close()
             database_pool.putconn(db_connect)
             abort(500)
 
@@ -356,6 +361,7 @@ class SingleCompany(Resource):
                 database_pool.putconn(db_connect)
                 return res
         except Error as e:
+            conn.close()
             database_pool.putconn(db_connect)
             abort(500)
 
@@ -386,6 +392,7 @@ class Cities(Resource):
                 database_pool.putconn(db_connect)
                 return obj
         except Error as e:
+            conn.close()
             database_pool.putconn(db_connect)
             abort(500)
 
@@ -433,6 +440,7 @@ class SingleCity(Resource):
                 database_pool.putconn(db_connect)
                 return res
         except Error as e:
+            conn.close()
             database_pool.putconn(db_connect)
             abort(500)
 
@@ -466,6 +474,7 @@ class Locations(Resource):
             else:
                 abort(500)
         except Error as e:
+            conn.close()
             database_pool.putconn(db_connect)
             abort(500)
 
@@ -512,6 +521,7 @@ class SingleLocationRewards(Resource):
                 database_pool.putconn(db_connect)
                 return res
         except Error as e:
+            conn.close()
             database_pool.putconn(db_connect)
             abort(500)
 
@@ -591,6 +601,7 @@ class Coordinates(Resource):
                 database_pool.putconn(db_connect)
                 return obj
         except Error as e:
+            conn.close()
             database_pool.putconn(db_connect)
             abort(500)
 
@@ -607,6 +618,7 @@ class AllRewards(Resource):
             database_pool.putconn(db_connect)
             return obj
         except Error as e:
+            conn.close()
             database_pool.putconn(db_connect)
             abort(500)
 
@@ -623,6 +635,7 @@ class AllLocations(Resource):
             database_pool.putconn(db_connect)
             return obj
         except Error as e:
+            conn.close()
             database_pool.putconn(db_connect)
             abort(500)
 
@@ -639,6 +652,7 @@ class AllRewardsAndLocations(Resource):
             database_pool.putconn(db_connect)
             return obj
         except Error as e:
+            conn.close()
             database_pool.putconn(db_connect)
             abort(500)
 
@@ -655,6 +669,7 @@ class AllRewardOrigins(Resource):
             database_pool.putconn(db_connect)
             return obj
         except Error as e:
+            conn.close()
             database_pool.putconn(db_connect)
             abort(500)
 
@@ -671,6 +686,7 @@ class Time(Resource):
             database_pool.putconn(db_connect)
             return obj
         except Error as e:
+            conn.close()
             database_pool.putconn(db_connect)
             abort(500)
 
