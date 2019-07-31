@@ -67,12 +67,19 @@ def getPaginatedLinks(start, limit, numResults, url):
     return obj
 
 
-def get_paginated_list(conn, numResults, url, start, limit, sql):
+def get_paginated_list(conn, numResults, url, start, limit, sql, order=False):
     obj = getPaginatedLinks(start, limit, numResults, url)
     # finally extract result according to bounds
     conn.execute(sql)
-    obj['data'] = [dict(zip(tuple([desc[0] for desc in conn.description]), i))
-                   for i in conn.fetchall()][obj['start']-1:obj['start']+obj['limit']-1]
+    print(order)
+    if order:
+        data = [dict(zip(tuple([desc[0] for desc in conn.description]), i))
+                for i in conn.fetchall()]
+        data_sorted = sorted(data, key=lambda x: x['company_name'].lower())
+        obj['data'] = data_sorted[obj['start']-1:obj['start']+obj['limit']-1]
+    else:
+        obj['data'] = [dict(zip(tuple([desc[0] for desc in conn.description]), i))
+                       for i in conn.fetchall()][obj['start']-1:obj['start']+obj['limit']-1]
     for dat in obj['data']:
         conn.execute(
             db_statements.GET_ALL_REWARD_LOCATIONS.format(dat['id']))
@@ -394,13 +401,15 @@ class SingleCity(Resource):
                     db_statements.COUNT_REWARDS_BY_CITY.format(name))
                 rowCount = conn.fetchone()[0]
                 res = jsonify(get_paginated_list(
-                    conn,
-                    rowCount,
-                    '/cities/{}?'.format(name),
+                    conn=conn,
+                    numResults=rowCount,
+                    url='/cities/{}?'.format(name),
                     start=request.args.get('start', 1),
                     limit=request.args.get('limit', 20),
                     sql=db_statements.GET_ALL_REWARDS_BY_CITY.format(
-                        name)
+                        name,
+                    ),
+                    order=True
                 ))
                 database_pool.putconn(db_connect)
                 return res
@@ -411,13 +420,15 @@ class SingleCity(Resource):
                     db_statements.COUNT_REWARDS_BY_CITY_FILTERED.format(name, program_names))
                 rowCount = conn.fetchone()[0]
                 res = jsonify(get_paginated_list(
-                    conn,
-                    rowCount,
-                    '/cities/{}?program={}&'.format(name, program_name),
+                    conn=conn,
+                    numResults=rowCount,
+                    url='/cities/{}?program={}&'.format(name, program_name),
                     start=request.args.get('start', 1),
                     limit=request.args.get('limit', 20),
                     sql=db_statements.GET_ALL_REWARDS_BY_CITY_FILTERED.format(
-                        name, program_names)
+                        name, program_names,
+                    ),
+                    order=True
                 ))
                 database_pool.putconn(db_connect)
                 return res
