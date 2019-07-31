@@ -549,6 +549,8 @@ class Locations(Resource):
                                    for i in conn.fetchall()]
                     conn.close()
                     database_pool.putconn(db_connect)
+                    number_of_connections -=  1
+                    print(f'number of active connections: {number_of_connections}')
                     return obj
                 else:
                     program_names = get_sql_safe_program_list(
@@ -560,6 +562,8 @@ class Locations(Resource):
                                    for i in conn.fetchall()]
                     conn.close()
                     database_pool.putconn(db_connect)
+                    number_of_connections -=  1
+                    print(f'number of active connections: {number_of_connections}')
                     return obj
             else:
                 abort(500)
